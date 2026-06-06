@@ -1,0 +1,49 @@
+name: GitHub Traffic Notifier
+
+on:
+  schedule:
+    # Run every hour at minute 0 (UTC)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  check-traffic:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Restore/Save Traffic Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            templates/last-traffic.json
+            last-traffic.json
+          key: traffic-cache-${{ github.run_number }}-${{ github.run_attempt }}
+          restore-keys: |
+            traffic-cache-
+
+      - name: Run Notifier Script
+        env:
+          # Use default repository secret GITHUB_TOKEN or a custom Personal Access Token (PAT)
+          # Note: Default GITHUB_TOKEN may lack traffic API read permission on some setups.
+          # If so, create a custom PAT with 'repo' scope and save it as GH_PAT secret.
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          # If notify.js is inside templates/, copy and run it
+          if [ -f "templates/notify.js" ]; then
+            node templates/notify.js
+          elif [ -f "notify.js" ]; then
+            node notify.js
+          else
+            echo "Error: notify.js script not found."
+            exit 1
+          fi

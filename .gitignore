@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Production build outputs
+dist
+dist-ssr
+build-stats.html
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Vercel metadata
+.vercel
+
+# Editor/OS files
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.swp
+*.tmp
+*.log

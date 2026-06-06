@@ -1,0 +1,41 @@
+name: GitHub Traffic Notifier
+
+on:
+  schedule:
+    - cron: '0 * * * *' # 매시간 정각 실행
+  workflow_dispatch: # 수동 실행 지원
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Traffic Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .github/scripts/cache
+          key: traffic-cache-${{ github.run_id }}
+          restore-keys: |
+            traffic-cache-
+
+      - name: Run Notifier Script
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/traffic-notifier.js
+
+      - name: Save Traffic Cache
+        uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: .github/scripts/cache
+          key: traffic-cache-${{ github.run_id }}-${{ github.run_attempt }}

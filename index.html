@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJ7THP0SX8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-GJ7THP0SX8');
+  </script>
+
+  <!-- Microsoft Clarity (Free Session Recording & Heatmap) -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        // 플레이스홀더 상태이면 로드를 건너뜁니다.
+        if (i === "YOUR_CLARITY_PROJECT_ID") return;
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x2lij8i98c");
+  </script>
+
+  <!-- Vercel Web Analytics (Free Hobby Plan) -->
+  <script defer src="/_vercel/insights/script.js"></script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitTraffic - 레포 트래픽 추적 사이트</title>
+  <meta name="description" content="내 깃허브 레포지토리의 조회수와 클론수 트래픽을 한눈에 확인하는 레포 트래픽 추적 사이트">
+  
+  <!-- Open Graph / Facebook / KakaoTalk -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://github-traffic-dashboard-dun.vercel.app">
+  <meta property="og:title" content="GitTraffic - 레포 트래픽 추적 사이트">
+  <meta property="og:description" content="내 깃허브 레포지토리의 조회수와 클론수 트래픽을 한눈에 확인하는 레포 트래픽 추적 사이트">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const errDiv = document.createElement('div');
+      errDiv.style.position = 'fixed';
+      errDiv.style.top = '0';
+      errDiv.style.left = '0';
+      errDiv.style.width = '100%';
+      errDiv.style.background = '#f43f5e';
+      errDiv.style.color = '#fff';
+      errDiv.style.padding = '1rem';
+      errDiv.style.zIndex = '99999';
+      errDiv.style.fontFamily = 'monospace';
+      errDiv.style.fontSize = '0.9rem';
+      errDiv.style.whiteSpace = 'pre-wrap';
+      errDiv.innerText = 'JS Error: ' + message + '\nAt: ' + source + ':' + lineno + ':' + colno + (error && error.stack ? '\nStack: ' + error.stack : '');
+      document.body.appendChild(errDiv);
+      return false;
+    };
+  </script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <h1><i data-lucide="activity"></i> GitTraffic</h1>
+        <p>레포 최근 트래픽 대시보드</p>
+      </div>
+      <div class="header-actions">
+        <span id="sync-time-display" style="display: none; font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-right: 0.5rem;"></span>
+        <button id="btn-sync-data" class="btn" style="display: none;" title="동기화하기">
+          <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> 새로고침
+        </button>
+        <button id="btn-toggle-summary" class="btn" style="display: none;">
+          <i data-lucide="eye-off"></i> 요약 숨기기
+        </button>
+        <button id="btn-settings" class="btn btn-primary" style="display: none;">
+          <i data-lucide="settings"></i> 연동 설정
+        </button>
+        <button id="btn-logout" class="btn btn-danger" style="display: none;">
+          <i data-lucide="log-out"></i> 로그아웃
+        </button>
+      </div>
+    </header>
+
+    <!-- Welcome landing section (Shown when not connected) -->
+    <section id="welcome-section" class="glass-panel welcome-section" style="display: none;">
+      <div class="welcome-badge">
+        <span class="welcome-badge-dot"></span>
+        간편한 깃허브 트래픽 추적
+      </div>
+      <h2 class="welcome-title">GitTraffic 시작하기</h2>
+      <p class="welcome-desc" style="margin-bottom: 1.5rem;">깃허브 유저네임(ID)과 개인 토큰(PAT)을 입력하여 트래픽 추적을 즉시 시작하세요.</p>
+      
+      <!-- Welcome Inline Form -->
+      <div class="glass-panel" style="width: 100%; max-width: 480px; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.3); border: 1px solid rgba(6, 182, 212, 0.15); margin-bottom: 2.5rem; text-align: left; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+        <form id="welcome-form" style="display: flex; flex-direction: column; gap: 1.2rem;">
+          <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
+            <label for="welcome-username" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span>1. 깃허브 사용자 이름 (Username)</span>
+              <a href="https://github.com" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">내 아이디 확인 ↗</a>
+            </label>
+            <input type="text" id="welcome-username" class="form-input" placeholder="예: octocat" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
+          </div>
+
+          <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
+            <label for="welcome-token" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span>2. Personal Access Token (PAT)</span>
+              <a href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=GitTraffic" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">토큰 발급받기 ↗</a>
+            </label>
+            <input type="password" id="welcome-token" class="form-input" placeholder="ghp_..." style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
+          </div>
+
+          <!-- Pre-filled Token Generation Helper Box -->
+          <div style="font-size: 0.7rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0.75rem; border-radius: 8px; line-height: 1.4;">
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+              <i data-lucide="help-circle" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i> 로그인 도움말
+            </div>
+            • <strong>아이디 확인</strong>: 깃허브 로그인 후 우측 상단 프로필 이미지 클릭 시 노출되는 ID입니다.<br>
+            • <strong>토큰 발급</strong>: 링크 이동 후 맨 밑의 <strong>Generate token</strong>만 누르면 바로 생성됩니다 (필요 권한 자동 체크됨).
+          </div>
+
+          <!-- Security warning box -->
+          <div class="security-info-box">
+            <div class="security-title">
+              <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT)은 안전하게 보호됩니다
+            </div>
+            <ul class="security-list">
+              <li><strong>서버 미전송</strong>: 토큰은 외부 서버나 DB로 절대 전송되지 않으며, 오직 본인 브라우저의 <code>localStorage</code>에만 보관됩니다.</li>
+              <li><strong>직접 통신</strong>: 외부 프록시 없이 본인 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 교신합니다.</li>
+              <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 외부 유출이 없는지 직접 눈으로 검증하실 수 있습니다.</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; margin-top: 0.4rem;">
+            설정 완료 및 트래픽 조회 시작
+          </button>
+        </form>
+      </div>
+      
+      <div class="welcome-features" style="grid-template-columns: repeat(2, 1fr); max-width: 480px; margin: 0 auto;">
+        <div class="glass-panel welcome-feature-card">
+          <i data-lucide="activity" style="color: var(--accent-cyan); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+          <h4>실시간 유입 감지</h4>
+          <p>오늘 방문한 유저 트래픽 신호를 즉시 추적합니다.</p>
+        </div>
+        <div class="glass-panel welcome-feature-card">
+          <i data-lucide="bar-chart-3" style="color: var(--accent-purple); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+          <h4>4-in-1 나비 차트</h4>
+          <p>조회수와 클론수, 유니크 수치를 한 카드에서 확인합니다.</p>
+        </div>
+        <!-- Slack Notification Feature (Hidden for background development) -->
+        <div class="glass-panel welcome-feature-card" style="display: none;">
+          <i data-lucide="bell" style="color: var(--accent-amber); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+          <h4>슬랙 실시간 알림</h4>
+          <p>누가 내 레포를 보거나 클론하면 슬랙 메시지를 보냅니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary Banner (Today Summary) -->
+    <section class="summary-grid">
+      <!-- Card 1: Today Status -->
+      <div class="glass-panel summary-card active" id="card-active-status">
+        <div class="summary-header">
+          <span>오늘의 유입 신호</span>
+          <div class="pulse-badge" id="pulse-badge">
+            <span class="pulse-dot"></span>
+            <span id="pulse-text">유입 감지</span>
+          </div>
+        </div>
+        <div class="summary-value" id="summary-active-count">0</div>
+        <div class="summary-desc">오늘 누군가 확인한 레포지토리 수</div>
+      </div>
+
+      <!-- Card 2: Views Today -->
+      <div class="glass-panel summary-card views">
+        <div class="summary-header">
+          <span>오늘의 총 조회수</span>
+          <i data-lucide="eye" style="color: var(--accent-cyan);"></i>
+        </div>
+        <div class="summary-value">
+          <span id="summary-views-today">0</span>
+          <span class="summary-change" id="summary-views-change"></span>
+        </div>
+        <div class="summary-desc">어제 대비 조회수 변동율</div>
+      </div>
+
+      <!-- Card 3: Clones Today -->
+      <div class="glass-panel summary-card clones">
+        <div class="summary-header">
+          <span>오늘의 총 클론수</span>
+          <i data-lucide="download" style="color: var(--accent-purple);"></i>
+        </div>
+        <div class="summary-value">
+          <span id="summary-clones-today">0</span>
+          <span class="summary-change" id="summary-clones-change"></span>
+        </div>
+        <div class="summary-desc">어제 대비 클론수 변동율</div>
+      </div>
+    </section>
+
+    <!-- Main Content Layout -->
+    <main class="main-layout">
+      <!-- Left side: Repositories Micro Dashboard Board -->
+      <section class="repos-section">
+        <div class="controls-section">
+          <div class="search-wrapper">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="repo-search" class="search-input" placeholder="레포지토리 검색...">
+          </div>
+          <div class="segmented-control" id="chart-view-mode">
+            <button class="segment-btn active" data-mode="both">모두 보기</button>
+            <button class="segment-btn" data-mode="views">조회수만</button>
+            <button class="segment-btn" data-mode="clones">클론수만</button>
+          </div>
+          <select id="repo-sort" class="sort-select">
+            <option value="today-views" selected>오늘 조회수 많은 순</option>
+            <option value="total-views">최근 14일 총 조회수 순</option>
+            <option value="last-active">마지막 유입 최신순</option>
+            <option value="total-clones">최근 14일 클론 많은 순</option>
+            <option value="name">레포지토리 이름순</option>
+          </select>
+          <button id="btn-toggle-private" class="btn btn-visibility-filter" title="프라이빗 레포 표시 여부 전환">
+            <i data-lucide="lock" style="width: 12px; height: 12px;"></i>
+            <span id="private-filter-label">Private 숨김</span>
+          </button>
+        </div>
+
+        <div id="loading-state" class="loading-indicator" style="display: none;">
+          <div class="spinner"></div>
+          <p id="loading-text">GitHub 트래픽 정보 가져오는 중...</p>
+        </div>
+
+        <div id="empty-state" class="glass-panel empty-state">
+          <i data-lucide="github" style="font-size: 2.5rem; margin-bottom: 0.8rem; color: var(--text-muted);"></i>
+          <h3>조회할 레포지토리가 없습니다</h3>
+          <p>연동에 문제가 있거나, 계정에 레포지토리가 존재하지 않을 수 있습니다.</p>
+          <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
+            <button id="btn-empty-logout" class="btn btn-danger">연동 해제 (로그아웃)</button>
+            <button id="btn-empty-settings" class="btn btn-primary">연동 설정 변경</button>
+          </div>
+        </div>
+
+        <!-- Micro Dashboard Grid Container -->
+        <div id="repo-grid-container" class="repo-grid" style="display: none;">
+          <!-- Dynamically generated Micro Repository Cards -->
+        </div>
+      </section>
+
+      <!-- Right side: Compact Sidebar for global referrals -->
+      <aside class="sidebar">
+        <!-- Unified Referrers -->
+        <div class="glass-panel sidebar-panel">
+          <h3 class="panel-title"><i data-lucide="link-2" style="color: var(--accent-amber);"></i> 주요 유입 사이트</h3>
+          <div id="referrer-list-container" class="referrer-list">
+            <!-- Dynamic referrers -->
+          </div>
+        </div>
+
+        <!-- Cumulative score rank -->
+        <div class="glass-panel sidebar-panel">
+          <h3 class="panel-title"><i data-lucide="flame" style="color: var(--accent-rose);"></i> 최근 14일 인기 랭킹</h3>
+          <div id="top-repos-list-container" class="top-repos-list">
+            <!-- Dynamic ranks -->
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div id="settings-drawer" class="drawer-overlay">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <div>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">깃허브 연동 설정</h2>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem;">트래픽 API를 호출하기 위한 정보를 입력하세요.</p>
+        </div>
+        <button id="btn-close-settings" class="drawer-close">&times;</button>
+      </div>
+
+      <!-- OAuth Login Section -->
+      <div id="oauth-section" style="margin-bottom: 1.5rem; text-align: center;">
+        <button id="btn-github-oauth" type="button" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem; font-weight: 600; display: none; margin-bottom: 0.5rem;">
+          <i data-lucide="github"></i> 깃허브 계정 3초 연동
+        </button>
+        <div id="oauth-loading" class="spinner" style="display: none; margin: 0 auto 0.5rem auto;"></div>
+        <div id="oauth-disabled-message" style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 0.6rem; border-radius: 8px; text-align: left; border: 1px solid var(--border-color); line-height: 1.4;">
+          <i data-lucide="shield-alert" style="width: 12px; height: 12px; display: inline; color: var(--accent-amber); vertical-align: middle;"></i>
+          OAuth 간편 로그인은 서버 환경 변수(GITHUB_CLIENT_ID)가 주입되었을 때 동작합니다. 비활성화된 경우 아래에 Personal Access Token을 수동으로 입력해 주세요.
+        </div>
+      </div>
+
+      <div id="auth-divider" style="display: flex; align-items: center; text-align: center; margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.75rem;">
+        <div style="flex: 1; border-top: 1px solid var(--border-color); margin-right: 0.5rem;"></div>
+        <span>또는 수동 토큰 연동</span>
+        <div style="flex: 1; border-top: 1px solid var(--border-color); margin-left: 0.5rem;"></div>
+      </div>
+
+      <form id="settings-form">
+        <div class="form-group">
+          <label for="github-username">깃허브 유저네임 (Username)</label>
+          <input type="text" id="github-username" class="form-input" placeholder="예: octocat" required>
+        </div>
+
+        <div class="form-group">
+          <label for="github-token">Personal Access Token (PAT)</label>
+          <input type="password" id="github-token" class="form-input" placeholder="ghp_..." required>
+          <div class="form-help" style="margin-bottom: 0.8rem;">
+            깃허브 트래픽은 <code>read:user</code> 및 <code>repo</code> 권한이 부여된 토큰으로 조회가 가능합니다.
+            <a href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=GitTraffic" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">토큰 생성 바로가기 <i data-lucide="external-link" style="width: 10px; height: 10px; display: inline;"></i></a>
+          </div>
+          <!-- Security warning box -->
+          <div class="security-info-box" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+            <div class="security-title">
+              <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT) 보안 안내
+            </div>
+            <ul class="security-list">
+              <li><strong>서버 미전송</strong>: 외부 서버나 DB로 전송되지 않으며 본인 브라우저(<code>localStorage</code>)에만 보관됩니다.</li>
+              <li><strong>직접 통신</strong>: 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 요청합니다.</li>
+              <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 직접 유출 여부를 확인하실 수 있습니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Slack Webhook Notification Section (Hidden for background development) -->
+        <div style="display: none;">
+          <div class="form-group" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+              <i data-lucide="bell" style="color: var(--accent-cyan); width: 16px; height: 16px;"></i> 슬랙(Slack) 실시간 알림 연동
+            </h3>
+            <label for="slack-webhook-url">슬랙 웹훅 URL (Slack Webhook URL)</label>
+            <input type="url" id="slack-webhook-url" class="form-input" placeholder="https://hooks.slack.com/services/...">
+          </div>
+
+          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+            <div style="flex: 1;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">백그라운드 트래픽 알림</span>
+              <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem; line-height: 1.3;">대시보드 페이지가 열려있을 때 5분 간격으로 트래픽을 감시하여 슬랙으로 자동 전송합니다.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="slack-notify-toggle">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem; margin-top: 1rem;">
+          설정 저장 및 조회 시작
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Micro Details Drawer (For referrers and detailed analytics per repo) -->
+  <div id="detail-drawer" class="drawer-overlay">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <div>
+          <h2 id="detail-repo-name" style="font-size: 1.3rem; font-weight: 800;">Repository Name</h2>
+          <p id="detail-repo-desc" style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.1rem;">Description</p>
+        </div>
+        <button id="btn-close-detail" class="drawer-close">&times;</button>
+      </div>
+
+      <!-- Detail content wrapper (Used to switch between content / error state) -->
+      <div id="detail-drawer-body">
+        <div class="detail-meta-list">
+          <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;">
+            <i data-lucide="compass" style="color: var(--accent-amber);"></i> 개별 유입 소스 (Referrers)
+          </h3>
+          <div id="detail-referrer-list" class="referrer-list">
+            <!-- Dynamic -->
+          </div>
+        </div>
+
+        <!-- 인기 방문 경로 (Popular Paths) -->
+        <div class="detail-meta-list" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem;">
+          <h3 style="font-size: 0.9rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
+            <i data-lucide="file-text" style="color: var(--accent-cyan);"></i> 인기 방문 경로 (Popular Paths)
+          </h3>
+          <div id="detail-paths-list" class="referrer-list">
+            <!-- Dynamic -->
+          </div>
+        </div>
+        
+        <!-- 일자별 트래픽 상세 -->
+        <div class="detail-meta-list" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem;">
+          <h3 style="font-size: 0.9rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
+            <i data-lucide="calendar" style="color: var(--accent-emerald);"></i> 14일간 일자별 상세 통계
+          </h3>
+          <div class="table-responsive">
+            <table class="detail-traffic-table">
+              <thead>
+                <tr>
+                  <th>날짜</th>
+                  <th>조회수 (고유)</th>
+                  <th>클론수 (고유)</th>
+                </tr>
+              </thead>
+              <tbody id="detail-traffic-table-body">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- html2canvas – captures DOM node to PNG for share card -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="share-modal-overlay" role="dialog" aria-modal="true" aria-label="트래픽 카드 공유">
+    <div class="share-modal-box">
+      <div class="share-modal-header">
+        <h3>📤 트래픽 카드 공유</h3>
+        <button id="btn-close-share-modal" class="share-modal-close" aria-label="닫기">&times;</button>
+      </div>
+
+      <div id="share-preview-container" class="share-preview-container">
+        <!-- dynamically replaced with <img> after capture -->
+        <div class="share-preview-loading">
+          <div class="spinner" style="width:18px;height:18px;"></div>
+          <span>공유 카드 생성 중…</span>
+        </div>
+      </div>
+
+      <p class="share-hint">이미지를 SNS·카카오톡·슬랙 등에 첨부하여 공유하세요 🚀</p>
+
+      <div class="share-actions">
+        <button id="btn-share-download" class="share-action-btn primary">
+          <i data-lucide="download" style="width:14px;height:14px;"></i> PNG 다운로드
+        </button>
+        <button id="btn-share-clipboard" class="share-action-btn secondary">
+          <i data-lucide="clipboard" style="width:14px;height:14px;"></i> 클립보드 복사
+        </button>
+        <button id="btn-share-native" class="share-action-btn secondary" style="display:none;">
+          <i data-lucide="share" style="width:14px;height:14px;"></i> 공유하기
+        </button>
+      </div>
+
+      <div class="share-link-section">
+        <span class="share-link-label">GitHub 링크</span>
+        <div class="share-link-row">
+          <span id="share-github-link" class="share-link-url">https://github.com/</span>
+          <button id="btn-share-copy-link" class="share-copy-link-btn">복사</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
