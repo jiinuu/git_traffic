@@ -1534,6 +1534,13 @@ function updateLayoutState() {
     }
   } else {
     if (welcomeSection) welcomeSection.style.display = 'flex';
+    
+    // Reset to showing the landing view and hiding the login form
+    const landingView = document.getElementById('landing-view');
+    const formView = document.getElementById('form-view');
+    if (landingView) landingView.style.display = 'flex';
+    if (formView) formView.style.display = 'none';
+
     if (summaryGrid) summaryGrid.style.display = 'none';
     if (mainLayout) mainLayout.style.display = 'none';
     if (btnSettings) btnSettings.style.display = 'none';
@@ -1816,6 +1823,38 @@ function setupEventListeners() {
         updateLayoutState();
         fetchTrafficData(true);
       }
+    });
+  }
+
+  // Onboarding View transitions
+  const btnGoToForm = document.getElementById('btn-go-to-form');
+  const btnBackToLanding = document.getElementById('btn-back-to-landing');
+  const landingView = document.getElementById('landing-view');
+  const formView = document.getElementById('form-view');
+
+  if (btnGoToForm && landingView && formView) {
+    btnGoToForm.addEventListener('click', () => {
+      // Transition from landing page to credentials form
+      landingView.style.display = 'none';
+      formView.style.display = 'block';
+      formView.classList.remove('view-slide-up');
+      // trigger reflow
+      void formView.offsetWidth;
+      formView.classList.add('view-slide-up');
+      initIcons();
+    });
+  }
+
+  if (btnBackToLanding && landingView && formView) {
+    btnBackToLanding.addEventListener('click', () => {
+      // Transition back to landing page
+      formView.style.display = 'none';
+      landingView.style.display = 'flex';
+      landingView.classList.remove('view-slide-up');
+      // trigger reflow
+      void landingView.offsetWidth;
+      landingView.classList.add('view-slide-up');
+      initIcons();
     });
   }
   

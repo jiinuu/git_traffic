@@ -83,75 +83,141 @@
 
     <!-- Welcome landing section (Shown when not connected) -->
     <section id="welcome-section" class="glass-panel welcome-section" style="display: none;">
-      <div class="welcome-badge">
-        <span class="welcome-badge-dot"></span>
-        간편한 깃허브 트래픽 추적
+      <!-- 1. LANDING VIEW -->
+      <div id="landing-view" class="landing-view view-slide-up">
+        <div class="welcome-badge">
+          <span class="welcome-badge-dot"></span>
+          간편한 깃허브 트래픽 추적
+        </div>
+        <h2 class="landing-title">내 깃허브 레포,<br class="mobile-only"> 누가 얼마나 봤을까?</h2>
+        <p class="welcome-desc" style="margin-bottom: 2rem;">조회수 · 클론수 · 인기 방문 경로를 5초 만에 한눈에 확인하세요.</p>
+        
+        <button id="btn-go-to-form" class="btn btn-primary btn-cta" style="margin-bottom: 3rem;">
+          시작해보기 <i data-lucide="arrow-right"></i>
+        </button>
+        
+        <div class="welcome-features" style="margin-bottom: 3.5rem;">
+          <div class="welcome-feature-card">
+            <i data-lucide="activity" style="color: var(--accent-cyan); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+            <h4>실시간 유입 감지</h4>
+            <p>오늘 방문한 유저 트래픽 신호를 즉시 추적합니다.</p>
+          </div>
+          <div class="welcome-feature-card">
+            <i data-lucide="bar-chart-3" style="color: var(--accent-purple); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+            <h4>4-in-1 나비 차트</h4>
+            <p>조회수와 클론수, 유니크 수치를 한 카드에서 확인합니다.</p>
+          </div>
+          <div class="welcome-feature-card">
+            <i data-lucide="flame" style="color: var(--accent-rose); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
+            <h4>인기 방문 경로</h4>
+            <p>방문자가 어떤 경로와 파일을 조회했는지 분석합니다.</p>
+          </div>
+        </div>
+
+        <!-- HTML/CSS Mock Dashboard Preview -->
+        <div class="mock-dashboard-preview">
+          <div class="mock-dashboard-title">
+            <i data-lucide="layout" style="width: 14px; height: 14px; color: var(--accent-cyan); display: inline-block; vertical-align: middle;"></i> 대시보드 미리보기
+          </div>
+          <div class="mock-repo-card glass-panel">
+            <div class="mock-card-top">
+              <div>
+                <div class="mock-repo-name-row">
+                  <span class="mock-repo-name">octocat / hello-world</span>
+                  <span class="mock-visibility-tag public">Public</span>
+                </div>
+                <div class="mock-repo-lang-tag">
+                  <span class="mock-lang-dot" style="background-color: #f1e05a;"></span> JavaScript
+                </div>
+              </div>
+              <span class="mock-active-badge badge-today">
+                <span class="pulse-dot"></span> 3분 전 유입
+              </span>
+            </div>
+            
+            <div class="mock-card-stats">
+              <div class="mock-stat-item">
+                <span>오늘 조회수</span>
+                <span style="color: var(--accent-cyan); font-weight: 700;">42회</span>
+              </div>
+              <div class="mock-stat-item">
+                <span>오늘 클론수</span>
+                <span style="color: var(--accent-purple); font-weight: 700;">8회</span>
+              </div>
+            </div>
+
+            <!-- Butterfly Sparkline representation -->
+            <div class="mock-sparkline-wrap">
+              <svg viewBox="0 0 300 54" class="mock-sparkline-svg">
+                <!-- Views Path (Cyan) -->
+                <path d="M0,15 Q25,5 50,18 T100,8 T150,22 T200,5 T250,15 T300,3" fill="none" stroke="#06b6d4" stroke-width="2" />
+                <!-- Clones Path (Purple) -->
+                <path d="M0,45 Q25,48 50,38 T100,42 T150,35 T200,48 T250,40 T300,50" fill="none" stroke="#a855f7" stroke-width="2" />
+              </svg>
+              <div class="mock-axis-label">
+                <span>1240 Views</span>
+                <span>380 Clones</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <h2 class="welcome-title">GitTraffic 시작하기</h2>
-      <p class="welcome-desc" style="margin-bottom: 1.5rem;">깃허브 유저네임(ID)과 개인 토큰(PAT)을 입력하여 트래픽 추적을 즉시 시작하세요.</p>
-      
-      <!-- Welcome Inline Form -->
-      <div class="glass-panel" style="width: 100%; max-width: 480px; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.3); border: 1px solid rgba(6, 182, 212, 0.15); margin-bottom: 2.5rem; text-align: left; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
-        <form id="welcome-form" style="display: flex; flex-direction: column; gap: 1.2rem;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
-            <label for="welcome-username" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <span>1. 깃허브 사용자 이름 (Username)</span>
-              <a href="https://github.com" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">내 아이디 확인 ↗</a>
-            </label>
-            <input type="text" id="welcome-username" class="form-input" placeholder="예: octocat" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
-          </div>
 
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
-            <label for="welcome-token" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <span>2. Personal Access Token (PAT)</span>
-              <a href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=GitTraffic" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">토큰 발급받기 ↗</a>
-            </label>
-            <input type="password" id="welcome-token" class="form-input" placeholder="ghp_..." style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
-          </div>
-
-          <!-- Pre-filled Token Generation Helper Box -->
-          <div style="font-size: 0.7rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0.75rem; border-radius: 8px; line-height: 1.4;">
-            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
-              <i data-lucide="help-circle" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i> 로그인 도움말
-            </div>
-            • <strong>아이디 확인</strong>: 깃허브 로그인 후 우측 상단 프로필 이미지 클릭 시 노출되는 ID입니다.<br>
-            • <strong>토큰 발급</strong>: 링크 이동 후 맨 밑의 <strong>Generate token</strong>만 누르면 바로 생성됩니다 (필요 권한 자동 체크됨).
-          </div>
-
-          <!-- Security warning box -->
-          <div class="security-info-box">
-            <div class="security-title">
-              <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT)은 안전하게 보호됩니다
-            </div>
-            <ul class="security-list">
-              <li><strong>서버 미전송</strong>: 토큰은 외부 서버나 DB로 절대 전송되지 않으며, 오직 본인 브라우저의 <code>localStorage</code>에만 보관됩니다.</li>
-              <li><strong>직접 통신</strong>: 외부 프록시 없이 본인 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 교신합니다.</li>
-              <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 외부 유출이 없는지 직접 눈으로 검증하실 수 있습니다.</li>
-            </ul>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; margin-top: 0.4rem;">
-            설정 완료 및 트래픽 조회 시작
+      <!-- 2. FORM VIEW -->
+      <div id="form-view" class="form-view" style="display: none; width: 100%;">
+        <div style="display: flex; justify-content: flex-start; width: 100%; max-width: 480px; margin: 0 auto 1rem auto;">
+          <button id="btn-back-to-landing" class="btn" style="background: transparent; border: none; padding: 0.5rem 0; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600; cursor: pointer;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> 뒤로가기
           </button>
-        </form>
-      </div>
-      
-      <div class="welcome-features" style="grid-template-columns: repeat(2, 1fr); max-width: 480px; margin: 0 auto;">
-        <div class="glass-panel welcome-feature-card">
-          <i data-lucide="activity" style="color: var(--accent-cyan); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
-          <h4>실시간 유입 감지</h4>
-          <p>오늘 방문한 유저 트래픽 신호를 즉시 추적합니다.</p>
         </div>
-        <div class="glass-panel welcome-feature-card">
-          <i data-lucide="bar-chart-3" style="color: var(--accent-purple); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
-          <h4>4-in-1 나비 차트</h4>
-          <p>조회수와 클론수, 유니크 수치를 한 카드에서 확인합니다.</p>
-        </div>
-        <!-- Slack Notification Feature (Hidden for background development) -->
-        <div class="glass-panel welcome-feature-card" style="display: none;">
-          <i data-lucide="bell" style="color: var(--accent-amber); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
-          <h4>슬랙 실시간 알림</h4>
-          <p>누가 내 레포를 보거나 클론하면 슬랙 메시지를 보냅니다.</p>
+        
+        <h2 class="welcome-title">GitTraffic 연동</h2>
+        <p class="welcome-desc" style="margin-bottom: 1.5rem;">깃허브 유저네임(ID)과 개인 토큰(PAT)을 입력하여 트래픽 추적을 즉시 시작하세요.</p>
+        
+        <!-- Welcome Inline Form -->
+        <div class="glass-panel" style="width: 100%; max-width: 480px; padding: 2rem; border-radius: 16px; background: rgba(15, 23, 42, 0.3); border: 1px solid rgba(6, 182, 212, 0.15); margin: 0 auto 1.5rem auto; text-align: left; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+          <form id="welcome-form" style="display: flex; flex-direction: column; gap: 1.2rem;">
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
+              <label for="welcome-username" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span>1. 깃허브 사용자 이름 (Username)</span>
+                <a href="https://github.com" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">내 아이디 확인 ↗</a>
+              </label>
+              <input type="text" id="welcome-username" class="form-input" placeholder="예: octocat" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
+            </div>
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
+              <label for="welcome-token" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span>2. Personal Access Token (PAT)</span>
+                <a href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=GitTraffic" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.15rem;">토큰 발급받기 ↗</a>
+              </label>
+              <input type="password" id="welcome-token" class="form-input" placeholder="ghp_..." style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
+            </div>
+
+            <!-- Pre-filled Token Generation Helper Box -->
+            <div style="font-size: 0.7rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0.75rem; border-radius: 8px; line-height: 1.4;">
+              <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                <i data-lucide="help-circle" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i> 로그인 도움말
+              </div>
+              • <strong>아이디 확인</strong>: 깃허브 로그인 후 우측 상단 프로필 이미지 클릭 시 노출되는 ID입니다.<br>
+              • <strong>토큰 발급</strong>: 링크 이동 후 맨 밑의 <strong>Generate token</strong>만 누르면 바로 생성됩니다 (필요 권한 자동 체크됨).
+            </div>
+
+            <!-- Security warning box -->
+            <div class="security-info-box">
+              <div class="security-title">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT)은 안전하게 보호됩니다
+              </div>
+              <ul class="security-list">
+                <li><strong>서버 미전송</strong>: 토큰은 외부 서버나 DB로 절대 전송되지 않으며, 오직 본인 브라우저의 <code>localStorage</code>에만 보관됩니다.</li>
+                <li><strong>직접 통신</strong>: 외부 프록시 없이 본인 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 교신합니다.</li>
+                <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 외부 유출이 없는지 직접 눈으로 검증하실 수 있습니다.</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; margin-top: 0.4rem;">
+              설정 완료 및 트래픽 조회 시작
+            </button>
+          </form>
         </div>
       </div>
     </section>
