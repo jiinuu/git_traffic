@@ -1773,7 +1773,7 @@ header {
 /* Mock Dashboard Preview Container */
 .mock-dashboard-preview {
   width: 100%;
-  max-width: 500px;
+  max-width: 680px;
   margin-top: 1rem;
   display: flex;
   flex-direction: column;
@@ -1964,5 +1964,11 @@ header {
   }
   .mock-dashboard-preview {
     max-width: 100%;
+  }
+  .mock-repos-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .mock-summary-grid {
+    grid-template-columns: 1fr !important;
   }
 }

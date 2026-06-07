@@ -92,11 +92,122 @@
         <h2 class="landing-title">내 깃허브 레포,<br class="mobile-only"> 누가 얼마나 봤을까?</h2>
         <p class="welcome-desc" style="margin-bottom: 2rem;">조회수 · 클론수 · 인기 방문 경로를 5초 만에 한눈에 확인하세요.</p>
         
-        <button id="btn-go-to-form" class="btn btn-primary btn-cta" style="margin-bottom: 3rem;">
+        <!-- HTML/CSS Mock Dashboard Preview (Placed First) -->
+        <div class="mock-dashboard-preview" style="margin-bottom: 2.5rem; max-width: 680px; width: 100%;">
+          <div class="mock-dashboard-title" style="margin-bottom: 0.6rem;">
+            <i data-lucide="layout" style="width: 14px; height: 14px; color: var(--accent-cyan); display: inline-block; vertical-align: middle;"></i> 대시보드 미리보기
+          </div>
+          
+          <!-- Mock Summary Grid -->
+          <div class="mock-summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; width: 100%; margin-bottom: 1rem;">
+            <div class="mock-summary-card glass-panel" style="padding: 0.8rem; text-align: left; border-top: 2px solid var(--accent-emerald); border-radius: 12px; background: rgba(15, 23, 42, 0.45);">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600;">오늘의 유입 신호</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary);">3</div>
+            </div>
+            <div class="mock-summary-card glass-panel" style="padding: 0.8rem; text-align: left; border-top: 2px solid var(--accent-cyan); border-radius: 12px; background: rgba(15, 23, 42, 0.45);">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600;">오늘의 총 조회수</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.3rem;">
+                142 <span style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 700;">+15%</span>
+              </div>
+            </div>
+            <div class="mock-summary-card glass-panel" style="padding: 0.8rem; text-align: left; border-top: 2px solid var(--accent-purple); border-radius: 12px; background: rgba(15, 23, 42, 0.45);">
+              <div style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600;">오늘의 총 클론수</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.3rem;">
+                24 <span style="font-size: 0.7rem; color: var(--accent-emerald); font-weight: 700;">+8%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mock Repo Cards Grid (2 cards side by side) -->
+          <div class="mock-repos-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%;">
+            <!-- Card 1 -->
+            <div class="mock-repo-card glass-panel" style="animation-delay: 0s;">
+              <div class="mock-card-top">
+                <div>
+                  <div class="mock-repo-name-row">
+                    <span class="mock-repo-name">octocat / hello-world</span>
+                    <span class="mock-visibility-tag public">Public</span>
+                  </div>
+                  <div class="mock-repo-lang-tag">
+                    <span class="mock-lang-dot" style="background-color: #f1e05a;"></span> JavaScript
+                  </div>
+                </div>
+                <span class="mock-active-badge badge-today">
+                  <span class="pulse-dot"></span> 3분 전
+                </span>
+              </div>
+              
+              <div class="mock-card-stats">
+                <div class="mock-stat-item">
+                  <span>오늘 조회</span>
+                  <span style="color: var(--accent-cyan); font-weight: 700;">42회</span>
+                </div>
+                <div class="mock-stat-item">
+                  <span>오늘 클론</span>
+                  <span style="color: var(--accent-purple); font-weight: 700;">8회</span>
+                </div>
+              </div>
+
+              <div class="mock-sparkline-wrap">
+                <svg viewBox="0 0 300 54" class="mock-sparkline-svg">
+                  <path d="M0,25 Q25,10 50,28 T100,15 T150,32 T200,12 T250,22 T300,5" fill="none" stroke="#06b6d4" stroke-width="2" />
+                  <path d="M0,45 Q25,48 50,38 T100,42 T150,35 T200,48 T250,40 T300,50" fill="none" stroke="#a855f7" stroke-width="2" />
+                </svg>
+                <div class="mock-axis-label">
+                  <span>1,240 Views</span>
+                  <span>380 Clones</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="mock-repo-card glass-panel" style="animation-delay: 0.3s;">
+              <div class="mock-card-top">
+                <div>
+                  <div class="mock-repo-name-row">
+                    <span class="mock-repo-name">jiinuu / git_traffic</span>
+                    <span class="mock-visibility-tag private">Private</span>
+                  </div>
+                  <div class="mock-repo-lang-tag">
+                    <span class="mock-lang-dot" style="background-color: #3572A5;"></span> Python
+                  </div>
+                </div>
+                <span class="mock-active-badge badge-today">
+                  <span class="pulse-dot"></span> 12분 전
+                </span>
+              </div>
+              
+              <div class="mock-card-stats">
+                <div class="mock-stat-item">
+                  <span>오늘 조회</span>
+                  <span style="color: var(--accent-cyan); font-weight: 700;">100회</span>
+                </div>
+                <div class="mock-stat-item">
+                  <span>오늘 클론</span>
+                  <span style="color: var(--accent-purple); font-weight: 700;">16회</span>
+                </div>
+              </div>
+
+              <div class="mock-sparkline-wrap">
+                <svg viewBox="0 0 300 54" class="mock-sparkline-svg">
+                  <path d="M0,35 Q25,20 50,12 T100,28 T150,8 T200,18 T250,5 T300,15" fill="none" stroke="#06b6d4" stroke-width="2" />
+                  <path d="M0,50 Q25,42 50,48 T100,38 T150,45 T200,32 T250,42 T300,35" fill="none" stroke="#a855f7" stroke-width="2" />
+                </svg>
+                <div class="mock-axis-label">
+                  <span>2,410 Views</span>
+                  <span>520 Clones</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 시작해보기 버튼 (CTA placed below preview) -->
+        <button id="btn-go-to-form" class="btn btn-primary btn-cta" style="margin-bottom: 4rem;">
           시작해보기 <i data-lucide="arrow-right"></i>
         </button>
         
-        <div class="welcome-features" style="margin-bottom: 3.5rem;">
+        <div class="welcome-features" style="margin-bottom: 1.5rem;">
           <div class="welcome-feature-card">
             <i data-lucide="activity" style="color: var(--accent-cyan); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
             <h4>실시간 유입 감지</h4>
@@ -111,54 +222,6 @@
             <i data-lucide="flame" style="color: var(--accent-rose); width: 24px; height: 24px; margin-bottom: 0.6rem;"></i>
             <h4>인기 방문 경로</h4>
             <p>방문자가 어떤 경로와 파일을 조회했는지 분석합니다.</p>
-          </div>
-        </div>
-
-        <!-- HTML/CSS Mock Dashboard Preview -->
-        <div class="mock-dashboard-preview">
-          <div class="mock-dashboard-title">
-            <i data-lucide="layout" style="width: 14px; height: 14px; color: var(--accent-cyan); display: inline-block; vertical-align: middle;"></i> 대시보드 미리보기
-          </div>
-          <div class="mock-repo-card glass-panel">
-            <div class="mock-card-top">
-              <div>
-                <div class="mock-repo-name-row">
-                  <span class="mock-repo-name">octocat / hello-world</span>
-                  <span class="mock-visibility-tag public">Public</span>
-                </div>
-                <div class="mock-repo-lang-tag">
-                  <span class="mock-lang-dot" style="background-color: #f1e05a;"></span> JavaScript
-                </div>
-              </div>
-              <span class="mock-active-badge badge-today">
-                <span class="pulse-dot"></span> 3분 전 유입
-              </span>
-            </div>
-            
-            <div class="mock-card-stats">
-              <div class="mock-stat-item">
-                <span>오늘 조회수</span>
-                <span style="color: var(--accent-cyan); font-weight: 700;">42회</span>
-              </div>
-              <div class="mock-stat-item">
-                <span>오늘 클론수</span>
-                <span style="color: var(--accent-purple); font-weight: 700;">8회</span>
-              </div>
-            </div>
-
-            <!-- Butterfly Sparkline representation -->
-            <div class="mock-sparkline-wrap">
-              <svg viewBox="0 0 300 54" class="mock-sparkline-svg">
-                <!-- Views Path (Cyan) -->
-                <path d="M0,15 Q25,5 50,18 T100,8 T150,22 T200,5 T250,15 T300,3" fill="none" stroke="#06b6d4" stroke-width="2" />
-                <!-- Clones Path (Purple) -->
-                <path d="M0,45 Q25,48 50,38 T100,42 T150,35 T200,48 T250,40 T300,50" fill="none" stroke="#a855f7" stroke-width="2" />
-              </svg>
-              <div class="mock-axis-label">
-                <span>1240 Views</span>
-                <span>380 Clones</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
