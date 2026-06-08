@@ -274,6 +274,18 @@
               <input type="text" id="welcome-username" class="form-input" placeholder="예: octocat" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem;" required>
             </div>
 
+            <!-- Security warning box -->
+            <div class="security-info-box">
+              <div class="security-title">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT)은 안전하게 보호됩니다
+              </div>
+              <ul class="security-list">
+                <li><strong>서버 미전송</strong>: 토큰은 외부 서버나 DB로 절대 전송되지 않으며, 오직 본인 브라우저의 <code>localStorage</code>에만 보관됩니다.</li>
+                <li><strong>직접 통신</strong>: 외부 프록시 없이 본인 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 교신합니다.</li>
+                <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 외부 유출이 없는지 직접 눈으로 검증하실 수 있습니다.</li>
+              </ul>
+            </div>
+
             <div class="form-group" style="display: flex; flex-direction: column; gap: 0.45rem;">
               <label for="welcome-token" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span>2. Personal Access Token (PAT)</span>
@@ -289,18 +301,6 @@
               </div>
               • <strong>아이디 확인</strong>: 깃허브 로그인 후 우측 상단 프로필 이미지 클릭 시 노출되는 ID입니다.<br>
               • <strong>토큰 발급</strong>: 링크 이동 후 맨 밑의 <strong>Generate token</strong>만 누르면 바로 생성됩니다 (필요 권한 자동 체크됨).
-            </div>
-
-            <!-- Security warning box -->
-            <div class="security-info-box">
-              <div class="security-title">
-                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT)은 안전하게 보호됩니다
-              </div>
-              <ul class="security-list">
-                <li><strong>서버 미전송</strong>: 토큰은 외부 서버나 DB로 절대 전송되지 않으며, 오직 본인 브라우저의 <code>localStorage</code>에만 보관됩니다.</li>
-                <li><strong>직접 통신</strong>: 외부 프록시 없이 본인 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 교신합니다.</li>
-                <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 외부 유출이 없는지 직접 눈으로 검증하실 수 있습니다.</li>
-              </ul>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; margin-top: 0.4rem;">
@@ -457,23 +457,24 @@
           <input type="text" id="github-username" class="form-input" placeholder="예: octocat" required>
         </div>
 
+        <!-- Security warning box -->
+        <div class="security-info-box" style="margin-bottom: 1rem;">
+          <div class="security-title">
+            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT) 보안 안내
+          </div>
+          <ul class="security-list">
+            <li><strong>서버 미전송</strong>: 외부 서버나 DB로 전송되지 않으며 본인 브라우저(<code>localStorage</code>)에만 보관됩니다.</li>
+            <li><strong>직접 통신</strong>: 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 요청합니다.</li>
+            <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 직접 유출 여부를 확인하실 수 있습니다.</li>
+          </ul>
+        </div>
+
         <div class="form-group">
           <label for="github-token">Personal Access Token (PAT)</label>
           <input type="password" id="github-token" class="form-input" placeholder="ghp_..." required>
-          <div class="form-help" style="margin-bottom: 0.8rem;">
+          <div class="form-help" style="margin-top: 0.4rem; margin-bottom: 0.8rem;">
             깃허브 트래픽은 <code>read:user</code> 및 <code>repo</code> 권한이 부여된 토큰으로 조회가 가능합니다.
             <a href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=GitTraffic" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">토큰 생성 바로가기 <i data-lucide="external-link" style="width: 10px; height: 10px; display: inline;"></i></a>
-          </div>
-          <!-- Security warning box -->
-          <div class="security-info-box" style="margin-top: 0.5rem; margin-bottom: 1rem;">
-            <div class="security-title">
-              <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> 개인 토큰(PAT) 보안 안내
-            </div>
-            <ul class="security-list">
-              <li><strong>서버 미전송</strong>: 외부 서버나 DB로 전송되지 않으며 본인 브라우저(<code>localStorage</code>)에만 보관됩니다.</li>
-              <li><strong>직접 통신</strong>: 브라우저에서 깃허브 공식 API 서버(<code>api.github.com</code>)로 직접 데이터를 요청합니다.</li>
-              <li><strong>실시간 검증</strong>: 개발자 도구(F12)의 <strong>네트워크 탭</strong>에서 직접 유출 여부를 확인하실 수 있습니다.</li>
-            </ul>
           </div>
         </div>
 

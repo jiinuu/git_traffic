@@ -1662,17 +1662,19 @@ header {
 .security-info-box {
   font-size: 0.72rem;
   color: var(--text-secondary);
-  background: rgba(16, 185, 129, 0.02);
-  border: 1px solid rgba(16, 185, 129, 0.16);
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-left: 3px solid #10b981;
   padding: 0.95rem 1rem;
   border-radius: 10px;
   line-height: 1.5;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.02);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.04);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 .security-info-box:hover {
-  border-color: rgba(16, 185, 129, 0.32);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.05);
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
 }
 .security-title {
   font-weight: 700;
