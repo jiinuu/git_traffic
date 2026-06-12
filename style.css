@@ -1999,6 +1999,25 @@ header {
   margin-top: 1rem;
 }
 
+/* Center Focus Frame / Box */
+.carousel-focus-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 310px; /* matches .repo-card width */
+  height: calc(100% - 1rem); /* leave padding space */
+  border: 2px dashed rgba(6, 182, 212, 0.45);
+  background: rgba(6, 182, 212, 0.02);
+  box-shadow: 
+    0 0 15px rgba(6, 182, 212, 0.1),
+    inset 0 0 15px rgba(6, 182, 212, 0.05);
+  border-radius: 16px;
+  pointer-events: none; /* let clicks pass through */
+  z-index: 2; /* above cards, below arrows */
+  transition: all 0.3s ease;
+}
+
 /* Carousel Scroll Container */
 .repo-carousel {
   display: flex !important; /* Force override grid */
@@ -2006,12 +2025,15 @@ header {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  gap: 1.2rem;
-  padding: 0.5rem 0.5rem 1.5rem 0.5rem;
+  gap: 1.5rem;
+  padding: 1.5rem 0 !important; /* Top/bottom padding to prevent scale cropping */
   width: 100%;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
   -webkit-overflow-scrolling: touch;
+  /* Crucial padding so first/last items can center align */
+  padding-left: calc(50% - 155px) !important;
+  padding-right: calc(50% - 155px) !important;
 }
 
 .repo-carousel::-webkit-scrollbar {
@@ -2023,26 +2045,35 @@ header {
   flex: 0 0 310px; /* Fixed card width in carousel */
   width: 310px;
   scroll-snap-align: center;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
-  opacity: 0.7; /* Dim inactive cards slightly for focus effect */
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+              border-color 0.4s ease, 
+              box-shadow 0.4s ease, 
+              opacity 0.4s ease,
+              filter 0.4s ease;
+  opacity: 0.3; /* Dim inactive cards heavily for focus effect */
+  filter: blur(1px); /* Subtle blur for depth of field */
+  transform: scale(0.92);
   margin: 0;
+  z-index: 1;
 }
 
 .repo-carousel .repo-card:hover {
-  opacity: 0.95;
-  transform: translateY(-2px);
+  opacity: 0.55;
+  filter: blur(0px);
+  transform: scale(0.95);
 }
 
-/* Active Highlighted Card */
+/* Active Highlighted Card (in focus box) */
 .repo-carousel .repo-card.active {
   opacity: 1;
-  border-color: var(--accent-cyan);
-  background: rgba(6, 182, 212, 0.08);
+  filter: blur(0px);
+  border-color: rgba(6, 182, 212, 0.65);
+  background: rgba(15, 23, 42, 0.5);
   box-shadow: 
-    0 0 15px rgba(6, 182, 212, 0.25),
-    0 8px 32px rgba(0, 0, 0, 0.3);
-  transform: scale(1.03);
-  outline: none;
+    0 0 20px rgba(6, 182, 212, 0.2),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+  transform: scale(1.02);
+  z-index: 3;
 }
 
 /* Navigation Buttons */
@@ -2093,6 +2124,13 @@ header {
 
 /* Responsive adjustments for mobile screens */
 @media (max-width: 640px) {
+  .repo-carousel {
+    padding-left: calc(50% - 135px) !important;
+    padding-right: calc(50% - 135px) !important;
+  }
+  .carousel-focus-frame {
+    width: 270px;
+  }
   .repo-carousel .repo-card {
     flex: 0 0 270px;
     width: 270px;
@@ -2111,6 +2149,6 @@ header {
     padding: 1rem;
   }
   #main-chart-container {
-    height: 250px !important;
+    height: 200px !important;
   }
 }

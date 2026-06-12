@@ -210,7 +210,8 @@ function updateMainChart(repo) {
       name: 'Views',
       nameTextStyle: { color: '#06b6d4', fontWeight: 'bold' },
       axisLabel: { color: 'rgba(255,255,255,0.6)' },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }
+      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } },
+      boundaryGap: [0, '15%']
     });
   }
   if (mode === 'both') {
@@ -219,7 +220,8 @@ function updateMainChart(repo) {
       name: 'Clones',
       nameTextStyle: { color: '#a855f7', fontWeight: 'bold' },
       axisLabel: { color: 'rgba(255,255,255,0.6)' },
-      splitLine: { show: false }
+      splitLine: { show: false },
+      boundaryGap: [0, '15%']
     });
   } else if (mode === 'clones') {
     yAxis.push({
@@ -227,7 +229,8 @@ function updateMainChart(repo) {
       name: 'Clones',
       nameTextStyle: { color: '#a855f7', fontWeight: 'bold' },
       axisLabel: { color: 'rgba(255,255,255,0.6)' },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }
+      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } },
+      boundaryGap: [0, '15%']
     });
   }
 
@@ -235,10 +238,10 @@ function updateMainChart(repo) {
     backgroundColor: 'transparent',
     textStyle: { fontFamily: 'Inter, system-ui, sans-serif' },
     grid: {
-      top: '15%',
+      top: 40,
       left: '3%',
       right: '3%',
-      bottom: '5%',
+      bottom: 25,
       containLabel: true
     },
     tooltip: {
@@ -2346,7 +2349,7 @@ function setupEventListeners() {
     btnCarouselPrev.addEventListener('click', () => {
       const card = carouselContainer.querySelector('.repo-card');
       if (card) {
-        const step = card.offsetWidth + 19; // card width + gap
+        const step = card.offsetWidth + 24; // card width + 1.5rem gap
         carouselContainer.scrollBy({ left: -step, behavior: 'smooth' });
       }
     });
@@ -2354,7 +2357,7 @@ function setupEventListeners() {
     btnCarouselNext.addEventListener('click', () => {
       const card = carouselContainer.querySelector('.repo-card');
       if (card) {
-        const step = card.offsetWidth + 19; // card width + gap
+        const step = card.offsetWidth + 24; // card width + 1.5rem gap
         carouselContainer.scrollBy({ left: step, behavior: 'smooth' });
       }
     });
