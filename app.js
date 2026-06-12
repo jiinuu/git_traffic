@@ -9,8 +9,6 @@ let state = {
   currentSort: 'today-views',
   currentSearch: '',
   selectedRepo: null,
-  selectedMainRepo: null,
-  activeTab: 'referrers',
   chartViewMode: 'both', // 'both', 'views', 'clones'
   hideSummary: localStorage.getItem('github_traffic_hide_summary') !== 'false', // default to true (hidden) if not explicitly set to false
   showPrivate: localStorage.getItem('github_traffic_show_private') === 'true', // default false (hidden)
@@ -28,6 +26,306 @@ function initIcons() {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+}
+
+// Main Chart and Carousel state
+let mainChartInstance = null;
+let lastActiveRepoName = null;
+
+// ECharts Initialization
+function initMainChart() {
+  const container = document.getElementById('main-chart-container');
+  if (!container) return;
+
+  // Initialize ECharts instance
+  mainChartInstance = echarts.init(container);
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (mainChartInstance) {
+      mainChartInstance.resize();
+    }
+  });
+}
+
+// Update ECharts Data & Styles
+function updateMainChart(repo) {
+  if (!mainChartInstance) {
+    initMainChart();
+  }
+  if (!mainChartInstance || !repo) return;
+
+  // Set repo details in header
+  const nameEl = document.getElementById('main-chart-repo-name');
+  const langEl = document.getElementById('main-chart-repo-lang');
+  const visEl = document.getElementById('main-chart-repo-visibility');
+  const mainChartSec = document.getElementById('main-chart-section');
+
+  if (mainChartSec) mainChartSec.style.display = 'block';
+  if (nameEl) nameEl.textContent = repo.name;
+  if (langEl) {
+    langEl.innerHTML = `<span class="lang-dot" style="background-color: ${repo.languageColor || '#ccc'}"></span> ${repo.language || 'Unknown'}`;
+  }
+  if (visEl) {
+    visEl.className = `visibility-tag ${repo.private ? 'private' : 'public'}`;
+    visEl.innerHTML = `<i data-lucide="${repo.private ? 'lock' : 'globe'}" style="width: 9px; height: 9px;"></i> ${repo.private ? 'Private' : 'Public'}`;
+    initIcons();
+  }
+
+  // Handle forbidden / error state
+  if (repo.error === 'forbidden') {
+    mainChartInstance.showLoading({
+      text: '상세 트래픽 권한 없음\n(토큰 권한을 확인하세요)',
+      color: '#06b6d4',
+      textColor: '#fda4af',
+      maskColor: 'rgba(7, 10, 18, 0.85)',
+      showSpinner: false
+    });
+    return;
+  } else {
+    mainChartInstance.hideLoading();
+  }
+
+  // Generate date labels (last 14 days)
+  const today = new Date();
+  const dateStrings = [];
+  const dateLabels = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const yyyymmdd = d.toISOString().split('T')[0];
+    dateStrings.push(yyyymmdd);
+    dateLabels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+  }
+
+  const viewsData = dateStrings.map(d => (repo.views && repo.views[d] ? repo.views[d].count : 0));
+  const viewsUniques = dateStrings.map(d => (repo.views && repo.views[d] ? repo.views[d].uniques : 0));
+  const clonesData = dateStrings.map(d => (repo.clones && repo.clones[d] ? repo.clones[d].count : 0));
+  const clonesUniques = dateStrings.map(d => (repo.clones && repo.clones[d] ? repo.clones[d].uniques : 0));
+
+  const mode = state.chartViewMode || 'both';
+  const series = [];
+
+  if (mode === 'both' || mode === 'views') {
+    series.push({
+      id: 'views-count',
+      name: '조회수 (Views)',
+      type: 'line',
+      smooth: true,
+      showSymbol: true,
+      symbolSize: 6,
+      yAxisIndex: 0,
+      data: viewsData,
+      lineStyle: {
+        color: '#06b6d4',
+        width: 3,
+        shadowColor: 'rgba(6, 182, 212, 0.3)',
+        shadowBlur: 8
+      },
+      itemStyle: {
+        color: '#06b6d4'
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(6, 182, 212, 0.2)' },
+          { offset: 1, color: 'rgba(6, 182, 212, 0.0)' }
+        ])
+      },
+      universalTransition: true
+    });
+
+    series.push({
+      id: 'views-uniques',
+      name: '고유 방문자 (Unique Views)',
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      yAxisIndex: 0,
+      data: viewsUniques,
+      lineStyle: {
+        color: '#22d3ee',
+        width: 1.5,
+        type: 'dashed'
+      },
+      itemStyle: {
+        color: '#22d3ee'
+      },
+      universalTransition: true
+    });
+  }
+
+  if (mode === 'both' || mode === 'clones') {
+    const isBoth = mode === 'both';
+    series.push({
+      id: 'clones-count',
+      name: '클론수 (Clones)',
+      type: 'line',
+      smooth: true,
+      showSymbol: true,
+      symbolSize: 6,
+      yAxisIndex: isBoth ? 1 : 0,
+      data: clonesData,
+      lineStyle: {
+        color: '#a855f7',
+        width: 3,
+        shadowColor: 'rgba(168, 85, 247, 0.3)',
+        shadowBlur: 8
+      },
+      itemStyle: {
+        color: '#a855f7'
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(168, 85, 247, 0.2)' },
+          { offset: 1, color: 'rgba(168, 85, 247, 0.0)' }
+        ])
+      },
+      universalTransition: true
+    });
+
+    series.push({
+      id: 'clones-uniques',
+      name: '고유 클론 (Unique Clones)',
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      yAxisIndex: isBoth ? 1 : 0,
+      data: clonesUniques,
+      lineStyle: {
+        color: '#c084fc',
+        width: 1.5,
+        type: 'dashed'
+      },
+      itemStyle: {
+        color: '#c084fc'
+      },
+      universalTransition: true
+    });
+  }
+
+  const yAxis = [];
+  if (mode === 'both' || mode === 'views') {
+    yAxis.push({
+      type: 'value',
+      name: 'Views',
+      nameTextStyle: { color: '#06b6d4', fontWeight: 'bold' },
+      axisLabel: { color: 'rgba(255,255,255,0.6)' },
+      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }
+    });
+  }
+  if (mode === 'both') {
+    yAxis.push({
+      type: 'value',
+      name: 'Clones',
+      nameTextStyle: { color: '#a855f7', fontWeight: 'bold' },
+      axisLabel: { color: 'rgba(255,255,255,0.6)' },
+      splitLine: { show: false }
+    });
+  } else if (mode === 'clones') {
+    yAxis.push({
+      type: 'value',
+      name: 'Clones',
+      nameTextStyle: { color: '#a855f7', fontWeight: 'bold' },
+      axisLabel: { color: 'rgba(255,255,255,0.6)' },
+      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }
+    });
+  }
+
+  const option = {
+    backgroundColor: 'transparent',
+    textStyle: { fontFamily: 'Inter, system-ui, sans-serif' },
+    grid: {
+      top: '15%',
+      left: '3%',
+      right: '3%',
+      bottom: '5%',
+      containLabel: true
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+      borderColor: 'rgba(6, 182, 212, 0.25)',
+      borderWidth: 1,
+      textStyle: { color: '#f3f4f6', fontSize: 12 },
+      shadowBlur: 10,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      formatter: function (params) {
+        if (!params || params.length === 0) return '';
+        let date = params[0].axisValueLabel;
+        let html = `<div style="font-weight:bold;margin-bottom:6px;color:#fff;">📅 2026/${date}</div>`;
+        params.forEach(p => {
+          let dotColor = p.color;
+          let dashedStyle = p.seriesName.includes('Unique') ? 'border: 1px dashed ' + dotColor + '; background: transparent;' : 'background:' + dotColor + ';';
+          html += `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1.5rem;margin-bottom:3px;">
+              <div style="display:flex;align-items:center;">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;${dashedStyle}"></span>
+                <span style="color:#9ca3af;">${p.seriesName}</span>
+              </div>
+              <span style="font-weight:bold;color:#fff;">${p.value}</span>
+            </div>
+          `;
+        });
+        return html;
+      }
+    },
+    legend: {
+      show: true,
+      textStyle: { color: 'rgba(255,255,255,0.7)', fontSize: 11 },
+      icon: 'circle',
+      top: '0%'
+    },
+    xAxis: {
+      type: 'category',
+      data: dateLabels,
+      axisLabel: { color: 'rgba(255,255,255,0.6)' },
+      axisTick: { alignWithLabel: true },
+      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+    },
+    yAxis: yAxis,
+    series: series,
+    animationDuration: 800
+  };
+
+  mainChartInstance.setOption(option, true);
+}
+
+// Carousel Card Selection
+function selectCarouselCard(cardEl, smoothScroll = true) {
+  const container = document.getElementById('repo-grid-container');
+  if (!container) return;
+
+  const cards = container.querySelectorAll('.repo-card');
+  cards.forEach(c => c.classList.remove('active'));
+  cardEl.classList.add('active');
+
+  const repoFullName = cardEl.getAttribute('data-repo-fullname');
+  lastActiveRepoName = repoFullName;
+
+  if (smoothScroll) {
+    const cardRect = cardEl.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const offsetLeft = cardEl.offsetLeft - container.offsetLeft;
+    const scrollPos = offsetLeft - (containerRect.width / 2) + (cardRect.width / 2);
+    container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+  }
+
+  const repo = state.repos.find(r => r.fullName === repoFullName);
+  if (repo) {
+    state.selectedRepo = repo;
+    updateMainChart(repo);
+  }
+}
+
+// Update Carousel Navigation Prev/Next Arrow Disabled State
+function updateCarouselNavButtons() {
+  const container = document.getElementById('repo-grid-container');
+  const btnPrev = document.getElementById('btn-carousel-prev');
+  const btnNext = document.getElementById('btn-carousel-next');
+  if (!container || !btnPrev || !btnNext) return;
+
+  btnPrev.disabled = container.scrollLeft <= 5;
+  btnNext.disabled = container.scrollLeft + container.clientWidth >= container.scrollWidth - 5;
 }
 
 // Helper for horizontal drag-to-scroll on long elements (e.g. paths)
@@ -758,14 +1056,14 @@ function showLoading(msg) {
   document.getElementById('loading-state').style.display = 'flex';
   document.getElementById('loading-text').innerText = msg;
   document.getElementById('empty-state').style.display = 'none';
-  document.getElementById('repo-grid-container').style.display = 'none';
+  document.getElementById('dashboard-content').style.display = 'none';
 }
 function hideLoading() {
   document.getElementById('loading-state').style.display = 'none';
 }
 function showEmptyState() {
   document.getElementById('empty-state').style.display = 'flex';
-  document.getElementById('repo-grid-container').style.display = 'none';
+  document.getElementById('dashboard-content').style.display = 'none';
 }
 
 // -------------------------------------------------------------
@@ -787,9 +1085,7 @@ function renderDashboard() {
   }
   
   document.getElementById('empty-state').style.display = 'none';
-  
-  const mainLayout = document.getElementById('main-dashboard-layout');
-  if (mainLayout) mainLayout.style.display = 'flex';
+  document.getElementById('dashboard-content').style.display = 'block';
   
   // Summary Stats
   let totalViewsToday = 0;
@@ -839,6 +1135,7 @@ function renderDashboard() {
     return matchesSearch && matchesVisibility;
   });
   
+  // Process relative date active profiles first for sorting stability
   filtered.forEach(repo => {
     repo.activityProfile = calculateLastActive(repo.views);
   });
@@ -858,140 +1155,48 @@ function renderDashboard() {
     return 0;
   });
   
-  // Determine selected main repo
-  if (filtered.length > 0) {
-    const isCurrentMainValid = filtered.some(r => state.selectedMainRepo && r.fullName === state.selectedMainRepo.fullName);
-    if (!isCurrentMainValid) {
-      state.selectedMainRepo = filtered[0];
-    } else {
-      state.selectedMainRepo = filtered.find(r => r.fullName === state.selectedMainRepo.fullName);
-    }
-  } else {
-    state.selectedMainRepo = null;
-  }
+  // Render Cards
+  const gridContainer = document.getElementById('repo-grid-container');
+  gridContainer.innerHTML = '';
   
-  // Render Hero Graph and Carousel list
-  if (state.selectedMainRepo) {
-    renderMainHeroGraph(state.selectedMainRepo);
-  }
-  renderCarousel(filtered);
-  
-  // Set initial scroll centering for selected card
-  if (state.selectedMainRepo) {
-    setTimeout(() => {
-      const selectedCard = document.querySelector(`.mini-repo-card[data-repo="${state.selectedMainRepo.fullName}"]`);
-      if (selectedCard) {
-        selectedCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
-      }
-    }, 100);
-  }
-}
-
-function renderMainHeroGraph(repo) {
-  if (!repo) return;
-  
-  // Update Header Info
-  const nameEl = document.getElementById('main-repo-name');
-  if (nameEl) nameEl.textContent = repo.name;
-  
-  const visibilityEl = document.getElementById('main-repo-visibility');
-  if (visibilityEl) {
-    visibilityEl.className = `visibility-tag ${repo.private ? 'private' : 'public'}`;
-    visibilityEl.innerHTML = `
-      <i data-lucide="${repo.private ? 'lock' : 'globe'}" style="width: 9px; height: 9px;"></i>
-      ${repo.private ? 'Private' : 'Public'}
-    `;
-  }
-  
-  const langEl = document.getElementById('main-repo-lang');
-  const langDotEl = document.getElementById('main-repo-lang-dot');
-  const langTextEl = document.getElementById('main-repo-lang-text');
-  if (langEl && langDotEl && langTextEl) {
-    langDotEl.style.backgroundColor = repo.languageColor;
-    langTextEl.textContent = repo.language;
-  }
-  
-  const activeBadgeEl = document.getElementById('main-repo-active-badge');
-  const activeTextEl = document.getElementById('main-repo-active-text');
-  if (activeBadgeEl && activeTextEl) {
-    const activity = repo.activityProfile || calculateLastActive(repo.views);
-    activeBadgeEl.className = `active-badge ${activity.class}`;
-    activeTextEl.textContent = activity.text;
-  }
-  
-  // Set up tab switching active button
-  const tabButtons = document.querySelectorAll('.hero-tabs-header .tab-btn');
-  tabButtons.forEach(btn => {
-    if (btn.dataset.tab === state.activeTab) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-  
-  const tabPanels = document.querySelectorAll('.hero-tab-content .tab-panel');
-  tabPanels.forEach(panel => {
-    if (panel.id === `tab-${state.activeTab}`) {
-      panel.classList.add('active');
-    } else {
-      panel.classList.remove('active');
-    }
-  });
-
-  const chartWrap = document.getElementById('main-chart-wrap');
-  const viewsTodayEl = document.getElementById('main-views-today');
-  const viewsTodayUniqEl = document.getElementById('main-views-today-uniq');
-  const clonesTodayEl = document.getElementById('main-clones-today');
-  const clonesTodayUniqActual = document.getElementById('main-clones-today-uniq');
-  const views14dEl = document.getElementById('main-views-14d');
-  const clones14dEl = document.getElementById('main-clones-14d');
-  const metricsGrid = document.querySelector('.hero-metrics-grid');
-  const tabsSection = document.querySelector('.hero-tabs-section');
-  const chartSection = document.querySelector('.hero-chart-section');
-
-  if (repo.error === 'forbidden') {
-    if (chartSection) chartSection.style.display = 'none';
-    if (metricsGrid) metricsGrid.style.display = 'none';
-    if (tabsSection) {
-      tabsSection.style.display = 'block';
-      tabsSection.style.borderTop = 'none';
-      tabsSection.style.paddingTop = '0';
-    }
+  filtered.forEach(repo => {
+    const card = document.createElement('div');
+    card.className = 'glass-panel repo-card';
+    card.setAttribute('data-repo-fullname', repo.fullName);
     
-    const tabsHeader = document.querySelector('.hero-tabs-header');
-    if (tabsHeader) tabsHeader.style.display = 'none';
+    const activity = repo.activityProfile;
+    const dualSparklineHtml = generateDualMirrorSparkline(repo.views, repo.clones);
+    const dualGridHtml = generateDualSparkGridHtml(repo.views, repo.clones);
+    const dualHoverOverlayHtml = generateSparklineHoverOverlay(repo.views, repo.clones);
+
+    // Calculate today's unique counts
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayViewUniques = repo.views[todayStr] ? repo.views[todayStr].uniques : 0;
+    const todayCloneUniques = repo.clones[todayStr] ? repo.clones[todayStr].uniques : 0;
     
-    const tabContent = document.querySelector('.hero-tab-content');
-    if (tabContent) {
-      tabContent.innerHTML = `
-        <div class="repo-error-chart-placeholder" style="height: auto; padding: 3rem 1.5rem; margin-top: 1rem; border-style: dashed;">
-          <i data-lucide="shield-alert" style="width: 32px; height: 32px; margin-bottom: 0.5rem;"></i>
-          <span style="font-size: 1rem;">상세 분석 권한 없음</span>
-          <p style="font-size: 0.8rem; margin-top: 0.5rem; max-width: 420px; text-align: center;">
-            상세 유입 경로, 인기 방문 파일(Paths), 일자별 상세 수치를 조회하지 못했습니다.<br><br>
-            이 레포지토리의 상세 통계 조회를 위해서는 개인 토큰(PAT) 발급 시 <strong>'repo' 권한 (Classic PAT)</strong> 또는 <strong>'Traffic' Read-only 권한 (Fine-grained PAT)</strong>이 부여되어야 합니다.
-          </p>
+    const mode = state.chartViewMode || 'both';
+
+    let middleContentHtml = '';
+    if (repo.error === 'forbidden') {
+      middleContentHtml = `
+        <div class="repo-error-chart-placeholder">
+          <i data-lucide="shield-alert"></i>
+          <span>상세 트래픽 권한 없음</span>
+          <p>이 레포지토리의 트래픽을 조회하려면 토큰에 'repo' 권한(Classic) 또는 'Traffic' 읽기 권한(Fine-grained)이 필요합니다.</p>
         </div>
       `;
-    }
-  } else {
-    if (chartSection) chartSection.style.display = 'flex';
-    if (metricsGrid) metricsGrid.style.display = 'grid';
-    if (tabsSection) {
-      tabsSection.style.display = 'flex';
-      tabsSection.style.borderTop = '1px solid var(--border-color)';
-      tabsSection.style.paddingTop = '1.5rem';
-    }
-    
-    const tabsHeader = document.querySelector('.hero-tabs-header');
-    if (tabsHeader) tabsHeader.style.display = 'flex';
-    
-    // Render Chart
-    if (chartWrap) {
-      const dualHeroSparkline = generateHeroDualMirrorSparkline(repo.views, repo.clones);
-      const hoverOverlay = generateHeroSparklineHoverOverlay(repo.views, repo.clones);
-      
-      const mode = state.chartViewMode || 'both';
+    } else {
+      const labelsHtml = mode === 'both' ? `
+        <span class="label-views"><span class="legend-line legend-solid" style="background:#06b6d4"></span>Views</span>
+        <span class="label-clones"><span class="legend-line legend-solid" style="background:#a855f7"></span>Clones</span>
+      ` : (mode === 'views' ? `
+        <span class="label-views"><span class="legend-line legend-solid" style="background:#06b6d4"></span>Views</span>
+        <span></span>
+      ` : `
+        <span></span>
+        <span class="label-clones"><span class="legend-line legend-solid" style="background:#a855f7"></span>Clones</span>
+      `);
+
       const axisLabelHtml = mode === 'both' ? `
         <span>${repo.totalViews14d}</span>
         <span style="opacity:0.4;font-size:0.6rem">14d</span>
@@ -1006,39 +1211,259 @@ function renderMainHeroGraph(repo) {
         <span>${repo.totalClones14d}</span>
       `);
 
-      chartWrap.innerHTML = `
-        ${dualHeroSparkline}
-        <div class="sparkline-hover-overlay">
-          ${hoverOverlay}
-        </div>
-        <div class="dual-axis-label" style="height: 100%; top: 0; padding: 1.2rem 0.5rem 1.2rem 1rem;">
-          ${axisLabelHtml}
+      const legendHtml = mode === 'both' ? `
+        <span class="legend-item"><span class="legend-dash" style="border-color:#22d3ee"></span>Unique</span>
+        <span class="legend-item"><span class="legend-dash" style="border-color:#c084fc"></span>Unique</span>
+      ` : (mode === 'views' ? `
+        <span class="legend-item"><span class="legend-dash" style="border-color:#22d3ee"></span>Unique</span>
+      ` : `
+        <span class="legend-item"><span class="legend-dash" style="border-color:#c084fc"></span>Unique</span>
+      `);
+
+      middleContentHtml = `
+        <div class="dual-sparkline-section">
+          <div class="dual-sparkline-labels">
+            ${labelsHtml}
+          </div>
+          <div class="dual-sparkline-wrap">
+            ${dualSparklineHtml}
+            <div class="sparkline-hover-overlay">
+              ${dualHoverOverlayHtml}
+            </div>
+            <div class="dual-axis-label">
+              ${axisLabelHtml}
+            </div>
+          </div>
+          <div class="dual-sparkline-legend">
+            ${legendHtml}
+          </div>
         </div>
       `;
     }
 
-    // Set today metric summary values
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayViewUniques = repo.views[todayStr] ? repo.views[todayStr].uniques : 0;
-    const todayCloneUniques = repo.clones[todayStr] ? repo.clones[todayStr].uniques : 0;
+    let gridContentHtml = '';
+    if (repo.error !== 'forbidden') {
+      gridContentHtml = `
+        <!-- Dual-Row Dot Grid (top=Views, bottom=Clones) -->
+        <div class="spark-grid-section">
+          <div class="dual-grid-label">
+            <span style="color:#06b6d4">● Views</span>
+            <span style="color:var(--text-muted)">14일 전 → 오늘</span>
+            <span style="color:#a855f7">● Clones</span>
+          </div>
+          <div class="dual-dot-grid">
+            ${dualGridHtml}
+          </div>
+        </div>
+      `;
+    }
 
-    if (viewsTodayEl) viewsTodayEl.textContent = repo.todayViews;
-    if (viewsTodayUniqEl) viewsTodayUniqEl.textContent = `${todayViewUniques} unique`;
-    if (clonesTodayEl) clonesTodayEl.textContent = repo.todayClones;
-    if (clonesTodayUniqActual) clonesTodayUniqActual.textContent = `${todayCloneUniques} unique`;
-    if (views14dEl) views14dEl.textContent = repo.totalViews14d;
-    if (clones14dEl) clones14dEl.textContent = repo.totalClones14d;
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="repo-name-row">
+            <div class="repo-name" title="${repo.fullName}">${repo.name}</div>
+            <span class="visibility-tag ${repo.private ? 'private' : 'public'}">
+              <i data-lucide="${repo.private ? 'lock' : 'globe'}" style="width: 9px; height: 9px;"></i>
+              ${repo.private ? 'Private' : 'Public'}
+            </span>
+          </div>
+          <span class="repo-lang-tag">
+            <span class="lang-dot" style="background-color: ${repo.languageColor}"></span>
+            ${repo.language}
+          </span>
+        </div>
+        <span class="active-badge ${activity.class}">
+          <i data-lucide="clock" style="width: 10px; height: 10px;"></i>
+          ${activity.text}
+        </span>
+      </div>
+      
+      ${middleContentHtml}
+      
+      <!-- 4-Metric Compact Stats -->
+      <div class="card-stats-4">
+        <div class="stat4-item views-stat">
+          <span class="stat4-label">👁 오늘</span>
+          <span class="stat4-main">${repo.todayViews}</span>
+          <span class="stat4-sub">${todayViewUniques} unique</span>
+        </div>
+        <div class="stat4-item clones-stat">
+          <span class="stat4-label">⬇ 오늘</span>
+          <span class="stat4-main">${repo.todayClones}</span>
+          <span class="stat4-sub">${todayCloneUniques} unique</span>
+        </div>
+        <div class="stat4-item views-stat dimmed">
+          <span class="stat4-label">👁 14일</span>
+          <span class="stat4-main">${repo.totalViews14d}</span>
+        </div>
+        <div class="stat4-item clones-stat dimmed">
+          <span class="stat4-label">⬇ 14일</span>
+          <span class="stat4-main">${repo.totalClones14d}</span>
+        </div>
+      </div>
+      
+      ${gridContentHtml}
 
-    // Reset Tab Contents
-    const tabContent = document.querySelector('.hero-tab-content');
-    tabContent.innerHTML = `
-      <div id="tab-referrers" class="tab-panel ${state.activeTab === 'referrers' ? 'active' : ''}">
-        <div id="main-referrer-list" class="referrer-list"></div>
+      <!-- Share Button -->
+      <button class="card-share-btn" data-share-repo="${repo.fullName}" title="트래픽 카드 공유">
+        <i data-lucide="share-2" style="width:10px;height:10px;"></i> 공유하기
+      </button>
+    `;
+    
+    card.addEventListener('click', (e) => {
+      // Don't open detail drawer if user clicked on the interactive hover overlay
+      if (e.target.closest('.sparkline-hover-overlay')) return;
+      // Don't open detail drawer if user clicked the share button
+      if (e.target.closest('.card-share-btn')) return;
+      if (card.classList.contains('active')) {
+        openDetailDrawer(repo);
+      } else {
+        selectCarouselCard(card, true);
+      }
+    });
+
+    // Share button — stop propagation so card click doesn't fire
+    const shareBtn = card.querySelector('.card-share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        captureAndShare(repo);
+      });
+    }
+
+    gridContainer.appendChild(card);
+  });
+  
+  // Aggregate referrals
+  const aggregatedRefs = {};
+  state.repos.forEach(repo => {
+    repo.referrers.forEach(ref => {
+      if (!aggregatedRefs[ref.referrer]) aggregatedRefs[ref.referrer] = { count: 0, uniques: 0 };
+      aggregatedRefs[ref.referrer].count += ref.count;
+      aggregatedRefs[ref.referrer].uniques += ref.uniques;
+    });
+  });
+  
+  const sortedRefs = Object.keys(aggregatedRefs)
+    .map(key => ({ referrer: key, count: aggregatedRefs[key].count, uniques: aggregatedRefs[key].uniques }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+    
+  const refContainer = document.getElementById('referrer-list-container');
+  refContainer.innerHTML = '';
+  if (sortedRefs.length === 0) {
+    refContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 0.5rem 0;">데이터가 없습니다.</div>';
+  } else {
+    sortedRefs.forEach(ref => {
+      const item = document.createElement('div');
+      item.className = 'referrer-item';
+      
+      let icon = 'link';
+      let friendlyName = ref.referrer;
+      if (ref.referrer.toLowerCase().includes('google')) { icon = 'search'; friendlyName = 'Google'; }
+      else if (ref.referrer.toLowerCase().includes('github')) { icon = 'github'; friendlyName = 'GitHub'; }
+      else if (ref.referrer.toLowerCase().includes('t.co') || ref.referrer.toLowerCase().includes('twitter')) { icon = 'twitter'; friendlyName = 'Twitter'; }
+      
+      item.innerHTML = `
+        <div class="referrer-name">
+          <i data-lucide="${icon}" style="width: 12px; height: 12px; color: var(--accent-amber);"></i>
+          <span>${friendlyName}</span>
+        </div>
+        <span style="font-weight: 700;">${ref.count} <span style="font-size: 0.7rem; color: var(--text-muted);">(${ref.uniques})</span></span>
+      `;
+      refContainer.appendChild(item);
+    });
+  }
+  
+  // Sidebar top ranked repos
+  const topRepos = [...state.repos]
+    .map(repo => ({
+      name: repo.name,
+      fullName: repo.fullName,
+      score: repo.totalViews14d + (repo.totalClones14d * 4)
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+    
+  const rankContainer = document.getElementById('top-repos-list-container');
+  rankContainer.innerHTML = '';
+  if (topRepos.length === 0) {
+    rankContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; padding: 0.5rem 0;">데이터가 없습니다.</div>';
+  } else {
+    topRepos.forEach((repo, index) => {
+      const item = document.createElement('div');
+      item.className = 'top-repo-item';
+      item.innerHTML = `
+        <span class="top-repo-rank">${index + 1}</span>
+        <span style="flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 0.5rem;" title="${repo.fullName}">${repo.name}</span>
+        <span style="font-weight: 700; color: var(--accent-cyan);">${repo.score} pt</span>
+      `;
+      rankContainer.appendChild(item);
+    });
+  }
+  
+  initIcons();
+
+  // Highlight active repo card in carousel and load main chart
+  const cards = gridContainer.querySelectorAll('.repo-card');
+  if (cards.length > 0) {
+    let activeCard = Array.from(cards).find(c => c.getAttribute('data-repo-fullname') === lastActiveRepoName);
+    const isInitialLoad = !lastActiveRepoName;
+    if (!activeCard) {
+      activeCard = cards[0];
+    }
+    // Select the card, and smooth-scroll it if it's the initial load
+    selectCarouselCard(activeCard, isInitialLoad);
+  } else {
+    // Hide main chart section if no matching repos
+    const mainChartSec = document.getElementById('main-chart-section');
+    if (mainChartSec) mainChartSec.style.display = 'none';
+  }
+}
+
+// -------------------------------------------------------------
+// 7. DETAIL DRAWER FOR REFERRERS
+// -------------------------------------------------------------
+function openDetailDrawer(repo) {
+  state.selectedRepo = repo;
+  
+  document.getElementById('detail-repo-name').innerText = repo.name;
+  document.getElementById('detail-repo-desc').innerText = repo.description;
+  
+  const bodyEl = document.getElementById('detail-drawer-body');
+  
+  if (repo.error === 'forbidden') {
+    bodyEl.innerHTML = `
+      <div class="repo-error-chart-placeholder" style="height: auto; padding: 2rem 1.2rem; margin-top: 1.5rem;">
+        <i data-lucide="shield-alert" style="width: 28px; height: 28px; margin-bottom: 0.4rem;"></i>
+        <span style="font-size: 0.95rem;">상세 분석 권한 없음</span>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; max-width: 380px; text-align: center;">
+          상세 유입 경로, 인기 방문 파일(Paths), 일자별 상세 수치를 조회하지 못했습니다.<br><br>
+          이 레포지토리의 상세 통계 조회를 위해서는 개인 토큰(PAT) 발급 시 <strong>'repo' 권한 (Classic PAT)</strong> 또는 <strong>'Traffic' Read-only 권한 (Fine-grained PAT)</strong>이 부여되어야 합니다.
+        </p>
       </div>
-      <div id="tab-paths" class="tab-panel ${state.activeTab === 'paths' ? 'active' : ''}">
-        <div id="main-paths-list" class="referrer-list"></div>
+    `;
+  } else {
+    bodyEl.innerHTML = `
+      <div class="detail-meta-list">
+        <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;">
+          <i data-lucide="compass" style="color: var(--accent-amber);"></i> 개별 유입 소스 (Referrers)
+        </h3>
+        <div id="detail-referrer-list" class="referrer-list"></div>
       </div>
-      <div id="tab-history" class="tab-panel ${state.activeTab === 'history' ? 'active' : ''}">
+
+      <div class="detail-meta-list" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem;">
+        <h3 style="font-size: 0.9rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
+          <i data-lucide="file-text" style="color: var(--accent-cyan);"></i> 인기 방문 경로 (Popular Paths)
+        </h3>
+        <div id="detail-paths-list" class="referrer-list"></div>
+      </div>
+      
+      <div class="detail-meta-list" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem;">
+        <h3 style="font-size: 0.9rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
+          <i data-lucide="calendar" style="color: var(--accent-emerald);"></i> 14일간 일자별 상세 통계
+        </h3>
         <div class="table-responsive">
           <table class="detail-traffic-table">
             <thead>
@@ -1048,408 +1473,87 @@ function renderMainHeroGraph(repo) {
                 <th>클론수 (고유)</th>
               </tr>
             </thead>
-            <tbody id="main-traffic-table-body"></tbody>
+            <tbody id="detail-traffic-table-body"></tbody>
           </table>
         </div>
       </div>
     `;
 
-    // 1. Populate Referrers Tab
-    const refContainer = document.getElementById('main-referrer-list');
-    if (refContainer) {
-      if (!repo.referrers || repo.referrers.length === 0) {
-        refContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 0; text-align: center;">유입 경로 통계가 아직 없습니다.</div>';
-      } else {
-        repo.referrers.forEach(ref => {
-          const el = document.createElement('div');
-          el.className = 'referrer-item';
-          
-          let icon = 'compass';
-          if (ref.referrer.toLowerCase().includes('google')) icon = 'search';
-          else if (ref.referrer.toLowerCase().includes('github')) icon = 'github';
-          else if (ref.referrer.toLowerCase().includes('t.co') || ref.referrer.toLowerCase().includes('twitter')) icon = 'twitter';
-          
-          el.innerHTML = `
-            <div class="referrer-name">
-              <i data-lucide="${icon}" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i>
-              <span>${ref.referrer}</span>
-            </div>
-            <span>조회수: <strong>${ref.count}</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(고유: ${ref.uniques})</span></span>
-          `;
-          refContainer.appendChild(el);
-        });
-      }
-    }
-
-    // 2. Populate Paths Tab
-    const pathsContainer = document.getElementById('main-paths-list');
-    if (pathsContainer) {
-      if (!repo.paths || repo.paths.length === 0) {
-        pathsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 0; text-align: center;">인기 방문 경로 데이터가 없습니다.</div>';
-      } else {
-        repo.paths.forEach(item => {
-          const el = document.createElement('div');
-          el.className = 'referrer-item';
-          el.innerHTML = `
-            <div class="referrer-name" title="${item.path}">
-              <i data-lucide="file-text" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i>
-              <span class="path-text-scroll">${item.path}</span>
-            </div>
-            <span style="flex-shrink:0;">조회수: <strong>${item.count}</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(고유: ${item.uniques})</span></span>
-          `;
-          pathsContainer.appendChild(el);
-          const scrollSpan = el.querySelector('.path-text-scroll');
-          if (scrollSpan) {
-            makeDragScrollable(scrollSpan);
-          }
-        });
-      }
-    }
-
-    // 3. Populate History Tab (14 days daily breakdown)
-    const historyBody = document.getElementById('main-traffic-table-body');
-    if (historyBody) {
-      const today = new Date();
-      const dateStrings = [];
-      for (let i = 0; i < 14; i++) {
-        const d = new Date();
-        d.setDate(today.getDate() - i);
-        dateStrings.push(d.toISOString().split('T')[0]);
-      }
-      
-      dateStrings.forEach(date => {
-        const v = repo.views[date] ? repo.views[date].count : 0;
-        const vu = repo.views[date] ? repo.views[date].uniques : 0;
-        const c = repo.clones[date] ? repo.clones[date].count : 0;
-        const cu = repo.clones[date] ? repo.clones[date].uniques : 0;
-        
-        const dParts = date.split('-');
-        const formattedDate = `${dParts[1]}/${dParts[2]}`; // MM/DD
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="font-weight: 600;">${formattedDate}</td>
-          <td>${v} <span style="color: var(--text-muted); font-size: 0.7rem;">(${vu})</span></td>
-          <td>${c} <span style="color: var(--text-muted); font-size: 0.7rem;">(${cu})</span></td>
+    // 1. Render Referrers list
+    const detailRefsContainer = document.getElementById('detail-referrer-list');
+    if (!repo.referrers || repo.referrers.length === 0) {
+      detailRefsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem 0;">방문 경로 통계가 아직 없습니다.</div>';
+    } else {
+      repo.referrers.forEach(ref => {
+        const el = document.createElement('div');
+        el.className = 'referrer-item';
+        el.innerHTML = `
+          <div class="referrer-name">
+            <i data-lucide="compass" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i>
+            <span>${ref.referrer}</span>
+          </div>
+          <span>Views: <strong>${ref.count}</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Uniques: ${ref.uniques})</span></span>
         `;
-        historyBody.appendChild(tr);
+        detailRefsContainer.appendChild(el);
       });
     }
-  }
 
-  initIcons();
-}
-
-function renderCarousel(repos) {
-  const track = document.getElementById('carousel-track');
-  if (!track) return;
-  
-  track.innerHTML = '';
-  
-  if (repos.length === 0) {
-    track.innerHTML = '<div style="color: var(--text-muted); text-align: center; width: 100%; padding: 2rem;">검색 조건에 맞는 레포지토리가 없습니다.</div>';
-    return;
-  }
-  
-  repos.forEach(repo => {
-    const card = document.createElement('div');
-    card.className = 'mini-repo-card';
-    if (state.selectedMainRepo && state.selectedMainRepo.fullName === repo.fullName) {
-      card.classList.add('active');
-    }
-    card.dataset.repo = repo.fullName;
-    
-    let sparklineMarkup = '';
-    if (repo.error !== 'forbidden') {
-      sparklineMarkup = `
-        <div class="mini-sparkline">
-          ${generateDualMirrorSparkline(repo.views, repo.clones)}
-        </div>
-      `;
+    // 2. Render Popular Paths list
+    const detailPathsContainer = document.getElementById('detail-paths-list');
+    if (!repo.paths || repo.paths.length === 0) {
+      detailPathsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem 0;">인기 방문 경로 데이터가 없습니다.</div>';
     } else {
-      sparklineMarkup = `
-        <div style="font-size: 0.65rem; color: var(--accent-rose); display: flex; align-items: center; gap: 0.2rem; background: rgba(244,63,94,0.05); padding: 0.4rem; border-radius: 6px; border: 1px dashed rgba(244,63,94,0.2);">
-          <i data-lucide="shield-alert" style="width: 10px; height: 10px; flex-shrink: 0;"></i> 권한 없음
-        </div>
-      `;
+      repo.paths.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'referrer-item';
+        el.innerHTML = `
+          <div class="referrer-name" title="${item.path}">
+            <i data-lucide="file-text" style="width: 12px; height: 12px; color: var(--accent-cyan);"></i>
+            <span class="path-text-scroll">${item.path}</span>
+          </div>
+          <span style="flex-shrink:0;">Views: <strong>${item.count}</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Uniques: ${item.uniques})</span></span>
+        `;
+        detailPathsContainer.appendChild(el);
+        
+        // Bind drag-to-scroll functionality
+        const scrollSpan = el.querySelector('.path-text-scroll');
+        if (scrollSpan) {
+          makeDragScrollable(scrollSpan);
+        }
+      });
     }
-    
-    card.innerHTML = `
-      <div class="mini-top">
-        <div class="mini-name-row">
-          <span class="mini-name" title="${repo.fullName}">${repo.name}</span>
-          <span class="mini-lang">
-            <span class="lang-dot" style="background-color: ${repo.languageColor}"></span>
-            ${repo.language}
-          </span>
-        </div>
-        <span class="visibility-tag ${repo.private ? 'private' : 'public'}" style="font-size: 0.55rem; padding: 0.02rem 0.2rem;">
-          ${repo.private ? 'Prv' : 'Pub'}
-        </span>
-      </div>
+
+    // 3. Render 14-day Daily Breakdown Table (Newest first)
+    const tableBody = document.getElementById('detail-traffic-table-body');
+    const today = new Date();
+    const dateStrings = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      dateStrings.push(d.toISOString().split('T')[0]);
+    }
+
+    dateStrings.forEach(date => {
+      const v = repo.views[date] ? repo.views[date].count : 0;
+      const vu = repo.views[date] ? repo.views[date].uniques : 0;
+      const c = repo.clones[date] ? repo.clones[date].count : 0;
+      const cu = repo.clones[date] ? repo.clones[date].uniques : 0;
       
-      <div class="mini-stats">
-        <div class="mini-stat-item">
-          <span class="mini-stat-label">오늘 조회</span>
-          <span class="mini-stat-value views">${repo.todayViews}</span>
-        </div>
-        <div class="mini-stat-item">
-          <span class="mini-stat-label">오늘 클론</span>
-          <span class="mini-stat-value clones">${repo.todayClones}</span>
-        </div>
-      </div>
+      const dParts = date.split('-');
+      const formattedDate = `${dParts[1]}/${dParts[2]}`; // MM/DD
       
-      ${sparklineMarkup}
-    `;
-    
-    card.addEventListener('click', () => {
-      selectMainRepo(repo, true);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600;">${formattedDate}</td>
+        <td>${v} <span style="color: var(--text-muted); font-size: 0.7rem;">(${vu})</span></td>
+        <td>${c} <span style="color: var(--text-muted); font-size: 0.7rem;">(${cu})</span></td>
+      `;
+      tableBody.appendChild(tr);
     });
-    
-    track.appendChild(card);
-  });
+  }
   
+  document.getElementById('detail-drawer').classList.add('open');
   initIcons();
-}
-
-function selectMainRepo(repo, scrollIntoView = true) {
-  state.selectedMainRepo = repo;
-  
-  const cards = document.querySelectorAll('.mini-repo-card');
-  cards.forEach(card => {
-    if (card.dataset.repo === repo.fullName) {
-      card.classList.add('active');
-      if (scrollIntoView) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      }
-    } else {
-      card.classList.remove('active');
-    }
-  });
-  
-  renderMainHeroGraph(repo);
-}
-
-function generateHeroDualMirrorSparkline(viewsObject, clonesObject) {
-  const today = new Date();
-  const dateStrings = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(today.getDate() - i);
-    dateStrings.push(d.toISOString().split('T')[0]);
-  }
-
-  const viewValues = dateStrings.map(d => (viewsObject[d] ? viewsObject[d].count : 0));
-  const cloneValues = dateStrings.map(d => (clonesObject[d] ? clonesObject[d].count : 0));
-  const viewUniques = dateStrings.map(d => (viewsObject[d] ? viewsObject[d].uniques : 0));
-  const cloneUniques = dateStrings.map(d => (clonesObject[d] ? clonesObject[d].uniques : 0));
-
-  const maxViews = Math.max(...viewValues, ...viewUniques, 1);
-  const maxClones = Math.max(...cloneValues, ...cloneUniques, 1);
-
-  const W = 200;
-  const H = 100;
-  const uid = Math.random().toString(36).substring(7);
-  const n = dateStrings.length;
-  const xStep = W / (n - 1);
-
-  let viewPathD = '', viewAreaD = '', viewUniqPathD = '';
-  let clonePathD = '', cloneAreaD = '', cloneUniqPathD = '';
-  let axisY = 50;
-
-  const mode = state.chartViewMode || 'both';
-
-  if (mode === 'both') {
-    const topH = 44;
-    const botH = 44;
-    const midY = 50;
-    axisY = midY;
-
-    const viewPts = viewValues.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxViews;
-      const y = midY - norm * topH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    const viewUniqPts = viewUniques.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxViews;
-      const y = midY - norm * topH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-
-    const clonePts = cloneValues.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxClones;
-      const y = midY + norm * botH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    const cloneUniqPts = cloneUniques.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxClones;
-      const y = midY + norm * botH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-
-    viewPathD = `M ${viewPts.join(' L ')}`;
-    viewAreaD = `${viewPathD} L ${W},${midY} L 0,${midY} Z`;
-    viewUniqPathD = `M ${viewUniqPts.join(' L ')}`;
-
-    clonePathD = `M ${clonePts.join(' L ')}`;
-    cloneAreaD = `${clonePathD} L ${W},${midY} L 0,${midY} Z`;
-    cloneUniqPathD = `M ${cloneUniqPts.join(' L ')}`;
-  } else if (mode === 'views') {
-    const baseH = 88;
-    const midY = 94;
-    axisY = midY;
-
-    const viewPts = viewValues.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxViews;
-      const y = midY - norm * baseH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    const viewUniqPts = viewUniques.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxViews;
-      const y = midY - norm * baseH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-
-    viewPathD = `M ${viewPts.join(' L ')}`;
-    viewAreaD = `${viewPathD} L ${W},${midY} L 0,${midY} Z`;
-    viewUniqPathD = `M ${viewUniqPts.join(' L ')}`;
-  } else if (mode === 'clones') {
-    const baseH = 88;
-    const midY = 94;
-    axisY = midY;
-
-    const clonePts = cloneValues.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxClones;
-      const y = midY - norm * baseH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    const cloneUniqPts = cloneUniques.map((v, i) => {
-      const x = i * xStep;
-      const norm = v / maxClones;
-      const y = midY - norm * baseH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-
-    clonePathD = `M ${clonePts.join(' L ')}`;
-    cloneAreaD = `${clonePathD} L ${W},${midY} L 0,${midY} Z`;
-    cloneUniqPathD = `M ${cloneUniqPts.join(' L ')}`;
-  }
-
-  const viewsSvgMarkup = (mode === 'both' || mode === 'views') ? `
-    <path d="${viewAreaD}" fill="url(#vg-${uid})"/>
-    <path d="${viewPathD}" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${viewUniqPathD}" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="3,3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
-  ` : '';
-
-  const clonesSvgMarkup = (mode === 'both' || mode === 'clones') ? `
-    <path d="${cloneAreaD}" fill="url(#cg-${uid})"/>
-    <path d="${clonePathD}" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${cloneUniqPathD}" fill="none" stroke="#c084fc" stroke-width="1.2" stroke-dasharray="3,3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
-  ` : '';
-
-  return `
-    <svg class="dual-sparkline-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="vg-${uid}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
-        </linearGradient>
-        <linearGradient id="cg-${uid}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#a855f7" stop-opacity="${mode === 'clones' ? '0.3' : '0.0'}"/>
-          <stop offset="100%" stop-color="#a855f7" stop-opacity="${mode === 'clones' ? '0.0' : '0.3'}"/>
-        </linearGradient>
-      </defs>
-      <line x1="0" y1="${axisY}" x2="${W}" y2="${axisY}" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
-      ${viewsSvgMarkup}
-      ${clonesSvgMarkup}
-    </svg>
-  `;
-}
-
-function generateHeroSparklineHoverOverlay(viewsObject, clonesObject) {
-  const today = new Date();
-  const dateStrings = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(today.getDate() - i);
-    dateStrings.push(d.toISOString().split('T')[0]);
-  }
-  
-  const viewValues = dateStrings.map(d => (viewsObject[d] ? viewsObject[d].count : 0));
-  const cloneValues = dateStrings.map(d => (clonesObject[d] ? clonesObject[d].count : 0));
-  const viewUniques = dateStrings.map(d => (viewsObject[d] ? viewsObject[d].uniques : 0));
-  const cloneUniques = dateStrings.map(d => (clonesObject[d] ? clonesObject[d].uniques : 0));
-
-  const maxViews = Math.max(...viewValues, ...viewUniques, 1);
-  const maxClones = Math.max(...cloneValues, ...cloneUniques, 1);
-
-  const mode = state.chartViewMode || 'both';
-  
-  return dateStrings.map((date, i) => {
-    const v = viewValues[i];
-    const vu = viewUniques[i];
-    const c = cloneValues[i];
-    const cu = cloneUniques[i];
-    
-    const dParts = date.split('-');
-    const label = `${dParts[1]}/${dParts[2]}`;
-    
-    const xPct = i * (100 / 13);
-    const widthPct = 100 / 13;
-    let left, width;
-    let alignClass = 'align-center';
-    
-    if (i === 0) {
-      left = 0;
-      width = widthPct / 2;
-      alignClass = 'align-left';
-    } else if (i === 13) {
-      left = 100 - widthPct / 2;
-      width = widthPct / 2;
-      alignClass = 'align-right';
-    } else {
-      left = xPct - widthPct / 2;
-      width = widthPct;
-    }
-    
-    let yViews = 0, yClones = 0;
-    let showViewsDot = false, showClonesDot = false;
-
-    if (mode === 'both') {
-      const topH = 44;
-      const botH = 44;
-      const midY = 50;
-      yViews = midY - (v / maxViews) * topH;
-      yClones = midY + (c / maxClones) * botH;
-      showViewsDot = true;
-      showClonesDot = true;
-    } else if (mode === 'views') {
-      const baseH = 88;
-      const midY = 94;
-      yViews = midY - (v / maxViews) * baseH;
-      showViewsDot = true;
-    } else if (mode === 'clones') {
-      const baseH = 88;
-      const midY = 94;
-      yClones = midY - (c / maxClones) * baseH;
-      showClonesDot = true;
-    }
-    
-    const viewsDotHtml = showViewsDot ? `<div class="sparkline-hover-dot dot-views" style="top: ${yViews.toFixed(1)}px;"></div>` : '';
-    const clonesDotHtml = showClonesDot ? `<div class="sparkline-hover-dot dot-clones" style="top: ${yClones.toFixed(1)}px;"></div>` : '';
-
-    return `<div class="sparkline-hover-col ${alignClass}" style="left: ${left.toFixed(2)}%; width: ${width.toFixed(2)}%;" data-label="${label}" data-views="${v}" data-views-uniq="${vu}" data-clones="${c}" data-clones-uniq="${cu}">
-      ${viewsDotHtml}
-      ${clonesDotHtml}
-    </div>`;
-  }).join('');
 }
 
 // -------------------------------------------------------------
@@ -1711,9 +1815,12 @@ function updateLayoutState() {
   
   if (isConnected) {
     if (welcomeSection) welcomeSection.style.display = 'none';
-    if (mainLayout) mainLayout.style.display = 'flex';
+    if (mainLayout) mainLayout.style.display = 'grid';
     if (btnSettings) btnSettings.style.display = 'inline-flex';
     if (btnLogout) btnLogout.style.display = 'inline-flex';
+    if (mainChartInstance) {
+      setTimeout(() => mainChartInstance.resize(), 100);
+    }
     if (btnSyncData) btnSyncData.style.display = 'inline-flex';
     
     if (syncTimeDisplay) {
@@ -2107,96 +2214,6 @@ function setupEventListeners() {
     });
   }
 
-  // Hero Tab Switching Event Delegation
-  document.addEventListener('click', (e) => {
-    const tabBtn = e.target.closest('.tab-btn');
-    if (!tabBtn) return;
-    
-    const tabsContainer = tabBtn.closest('.hero-tabs-header');
-    if (!tabsContainer) return;
-    
-    const buttons = tabsContainer.querySelectorAll('.tab-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    tabBtn.classList.add('active');
-    
-    const tabName = tabBtn.dataset.tab;
-    const heroGraph = tabsContainer.closest('#main-hero-graph');
-    const panels = heroGraph.querySelectorAll('.tab-panel');
-    panels.forEach(panel => {
-      if (panel.id === `tab-${tabName}`) {
-        panel.classList.add('active');
-      } else {
-        panel.classList.remove('active');
-      }
-    });
-    
-    state.activeTab = tabName;
-  });
-
-  // Main graph share button
-  const mainShareBtn = document.getElementById('main-repo-share-btn');
-  if (mainShareBtn) {
-    mainShareBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (state.selectedMainRepo) {
-        captureAndShare(state.selectedMainRepo);
-      }
-    });
-  }
-
-  // Carousel navigation buttons
-  const btnPrev = document.getElementById('carousel-btn-prev');
-  const btnNext = document.getElementById('carousel-btn-next');
-  if (btnPrev && btnNext) {
-    btnPrev.addEventListener('click', () => {
-      const trackWrapper = document.querySelector('.carousel-track-wrapper');
-      if (trackWrapper) {
-        trackWrapper.scrollBy({ left: -280, behavior: 'smooth' });
-      }
-    });
-    btnNext.addEventListener('click', () => {
-      const trackWrapper = document.querySelector('.carousel-track-wrapper');
-      if (trackWrapper) {
-        trackWrapper.scrollBy({ left: 280, behavior: 'smooth' });
-      }
-    });
-  }
-
-  // Carousel scroll centering and auto-selection
-  const trackWrapper = document.querySelector('.carousel-track-wrapper');
-  if (trackWrapper) {
-    let scrollTimeout;
-    trackWrapper.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const wrapperRect = trackWrapper.getBoundingClientRect();
-        const wrapperCenter = wrapperRect.left + wrapperRect.width / 2;
-        
-        const cards = trackWrapper.querySelectorAll('.mini-repo-card');
-        let closestCard = null;
-        let minDistance = Infinity;
-        
-        cards.forEach(card => {
-          const cardRect = card.getBoundingClientRect();
-          const cardCenter = cardRect.left + cardRect.width / 2;
-          const distance = Math.abs(cardCenter - wrapperCenter);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestCard = card;
-          }
-        });
-        
-        if (closestCard) {
-          const repoName = closestCard.dataset.repo;
-          const repo = state.repos.find(r => r.fullName === repoName);
-          if (repo && state.selectedMainRepo !== repo) {
-            selectMainRepo(repo, false); // select without scrolling
-          }
-        }
-      }, 150);
-    });
-  }
-
   // Floating Tooltip Event Delegation for sparkline hover columns
   document.addEventListener('mouseover', (e) => {
     const col = e.target.closest('.sparkline-hover-col');
@@ -2285,6 +2302,65 @@ function setupEventListeners() {
   const btnShareCopyLink = document.getElementById('btn-share-copy-link');
   if (btnShareCopyLink) {
     btnShareCopyLink.addEventListener('click', handleShareCopyLink);
+  }
+
+  // Carousel Scroll & Navigation Setup
+  const carouselContainer = document.getElementById('repo-grid-container');
+  const btnCarouselPrev = document.getElementById('btn-carousel-prev');
+  const btnCarouselNext = document.getElementById('btn-carousel-next');
+
+  if (carouselContainer && btnCarouselPrev && btnCarouselNext) {
+    let scrollTimeout;
+    carouselContainer.addEventListener('scroll', () => {
+      // 1. Update arrow buttons disabled state
+      updateCarouselNavButtons();
+
+      // 2. Select card in center of screen
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (carouselContainer.style.display === 'none' || carouselContainer.offsetWidth === 0) return;
+
+        const containerRect = carouselContainer.getBoundingClientRect();
+        const containerCenter = containerRect.left + containerRect.width / 2;
+
+        let closestCard = null;
+        let minDistance = Infinity;
+
+        const cards = carouselContainer.querySelectorAll('.repo-card');
+        cards.forEach(card => {
+          const cardRect = card.getBoundingClientRect();
+          const cardCenter = cardRect.left + cardRect.width / 2;
+          const distance = Math.abs(cardCenter - containerCenter);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCard = card;
+          }
+        });
+
+        if (closestCard && !closestCard.classList.contains('active')) {
+          selectCarouselCard(closestCard, false);
+        }
+      }, 150);
+    });
+
+    btnCarouselPrev.addEventListener('click', () => {
+      const card = carouselContainer.querySelector('.repo-card');
+      if (card) {
+        const step = card.offsetWidth + 19; // card width + gap
+        carouselContainer.scrollBy({ left: -step, behavior: 'smooth' });
+      }
+    });
+
+    btnCarouselNext.addEventListener('click', () => {
+      const card = carouselContainer.querySelector('.repo-card');
+      if (card) {
+        const step = card.offsetWidth + 19; // card width + gap
+        carouselContainer.scrollBy({ left: step, behavior: 'smooth' });
+      }
+    });
+
+    // Initial call to set arrow state
+    setTimeout(updateCarouselNavButtons, 200);
   }
 }
 
