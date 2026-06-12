@@ -353,99 +353,108 @@
       </div>
     </section>
 
-    <!-- Main Content Layout -->
-    <main class="main-layout">
-      <!-- Left side: Repositories Micro Dashboard Board -->
-      <section class="repos-section">
-        <div class="controls-section">
-          <div class="search-wrapper">
-            <i data-lucide="search" class="search-icon"></i>
-            <input type="text" id="repo-search" class="search-input" placeholder="레포지토리 검색...">
-          </div>
-          <div class="segmented-control" id="chart-view-mode">
-            <button class="segment-btn active" data-mode="both">모두 보기</button>
-            <button class="segment-btn" data-mode="views">조회수만</button>
-            <button class="segment-btn" data-mode="clones">클론수만</button>
-          </div>
-          <select id="repo-sort" class="sort-select">
-            <option value="today-views" selected>오늘 조회수 많은 순</option>
-            <option value="total-views">최근 14일 총 조회수 순</option>
-            <option value="last-active">마지막 유입 최신순</option>
-            <option value="total-clones">최근 14일 클론 많은 순</option>
-            <option value="name">레포지토리 이름순</option>
-          </select>
-          <button id="btn-toggle-private" class="btn btn-visibility-filter" title="프라이빗 레포 표시 여부 전환">
-            <i data-lucide="lock" style="width: 12px; height: 12px;"></i>
-            <span id="private-filter-label">Private 숨김</span>
-          </button>
-        </div>
+    <!-- Main Content Wrapper -->
+    <div class="main-content-wrapper">
 
-        <div id="loading-state" class="loading-indicator" style="display: none;">
-          <div class="spinner"></div>
-          <p id="loading-text">GitHub 트래픽 정보 가져오는 중...</p>
-        </div>
-
-        <div id="empty-state" class="glass-panel empty-state">
-          <i data-lucide="github" style="font-size: 2.5rem; margin-bottom: 0.8rem; color: var(--text-muted);"></i>
-          <h3>조회할 레포지토리가 없습니다</h3>
-          <p>연동에 문제가 있거나, 계정에 레포지토리가 존재하지 않을 수 있습니다.</p>
-          <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
-            <button id="btn-empty-logout" class="btn btn-danger">연동 해제 (로그아웃)</button>
-            <button id="btn-empty-settings" class="btn btn-primary">연동 설정 변경</button>
-          </div>
-        </div>
-
-        <!-- Dashboard Content Container (shown only when repos are loaded) -->
-        <div id="dashboard-content" style="display: none;">
-          <!-- 1. Main Large Chart -->
-          <section id="main-chart-section" class="glass-panel main-chart-panel" style="margin-bottom: 1.5rem; padding: 1.5rem; position: relative;">
-            <div class="main-chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-              <div>
-                <h2 id="main-chart-repo-name" style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.2;"></h2>
-                <div id="main-chart-repo-sub" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                  <span id="main-chart-repo-lang"></span>
-                  <span id="main-chart-repo-visibility"></span>
-                </div>
-              </div>
-              <div class="main-chart-period" style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.08); padding: 0.35rem 0.75rem; border-radius: 20px; border: 1px solid rgba(6, 182, 212, 0.15); font-weight: 600;">
-                최근 14일 트래픽
+      <!-- Dashboard Content: Full-width chart + carousel (shown when repos loaded) -->
+      <div id="dashboard-content" style="display: none;">
+        <!-- 1. Main Large Chart -->
+        <section id="main-chart-section" class="glass-panel main-chart-panel" style="margin-bottom: 1rem; padding: 1.5rem; position: relative;">
+          <div class="main-chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h2 id="main-chart-repo-name" style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.2;"></h2>
+              <div id="main-chart-repo-sub" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span id="main-chart-repo-lang"></span>
+                <span id="main-chart-repo-visibility"></span>
               </div>
             </div>
-            <!-- Main ECharts container -->
-            <div id="main-chart-container" style="width: 100%; height: 260px;"></div>
-          </section>
-
-          <!-- 2. Carousel Wrapper -->
-          <div class="carousel-container-outer" style="position: relative; margin-bottom: 2rem;">
-            <button id="btn-carousel-prev" class="carousel-nav-btn prev-btn" aria-label="이전 레포지토리">◀</button>
-            <div class="carousel-focus-frame"></div>
-            <div id="repo-grid-container" class="repo-carousel">
-              <!-- Dynamically generated cards -->
+            <div class="main-chart-period" style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.08); padding: 0.35rem 0.75rem; border-radius: 20px; border: 1px solid rgba(6, 182, 212, 0.15); font-weight: 600;">
+              최근 14일 트래픽
             </div>
-            <button id="btn-carousel-next" class="carousel-nav-btn next-btn" aria-label="다음 레포지토리">▶</button>
           </div>
-        </div>
-      </section>
+          <!-- Main ECharts container -->
+          <div id="main-chart-container" style="width: 100%; height: 260px;"></div>
+        </section>
 
-      <!-- Right side: Compact Sidebar for global referrals -->
-      <aside class="sidebar">
-        <!-- Unified Referrers -->
-        <div class="glass-panel sidebar-panel">
-          <h3 class="panel-title"><i data-lucide="link-2" style="color: var(--accent-amber);"></i> 주요 유입 사이트</h3>
-          <div id="referrer-list-container" class="referrer-list">
-            <!-- Dynamic referrers -->
+        <!-- 2. Carousel Wrapper -->
+        <div class="carousel-container-outer" style="position: relative; margin-bottom: 1.5rem;">
+          <button id="btn-carousel-prev" class="carousel-nav-btn prev-btn" aria-label="이전 레포지토리">◀</button>
+          <div class="carousel-focus-frame"></div>
+          <div id="repo-grid-container" class="repo-carousel">
+            <!-- Dynamically generated cards -->
           </div>
+          <button id="btn-carousel-next" class="carousel-nav-btn next-btn" aria-label="다음 레포지토리">▶</button>
         </div>
+      </div>
 
-        <!-- Cumulative score rank -->
-        <div class="glass-panel sidebar-panel">
-          <h3 class="panel-title"><i data-lucide="flame" style="color: var(--accent-rose);"></i> 최근 14일 인기 랭킹</h3>
-          <div id="top-repos-list-container" class="top-repos-list">
-            <!-- Dynamic ranks -->
+      <!-- Main Content Layout (2-column) -->
+      <main class="main-layout">
+        <!-- Left side: Repositories Micro Dashboard Board -->
+        <section class="repos-section">
+          <div class="controls-section">
+            <div class="search-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="repo-search" class="search-input" placeholder="레포지토리 검색...">
+            </div>
+            <div class="segmented-control" id="chart-view-mode">
+              <button class="segment-btn active" data-mode="both">모두 보기</button>
+              <button class="segment-btn" data-mode="views">조회수만</button>
+              <button class="segment-btn" data-mode="clones">클론수만</button>
+            </div>
+            <select id="repo-sort" class="sort-select">
+              <option value="today-views" selected>오늘 조회수 많은 순</option>
+              <option value="total-views">최근 14일 총 조회수 순</option>
+              <option value="last-active">마지막 유입 최신순</option>
+              <option value="total-clones">최근 14일 클론 많은 순</option>
+              <option value="name">레포지토리 이름순</option>
+            </select>
+            <button id="btn-toggle-private" class="btn btn-visibility-filter" title="프라이빗 레포 표시 여부 전환">
+              <i data-lucide="lock" style="width: 12px; height: 12px;"></i>
+              <span id="private-filter-label">Private 숨김</span>
+            </button>
           </div>
-        </div>
-      </aside>
-    </main>
+
+          <div id="loading-state" class="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+            <p id="loading-text">GitHub 트래픽 정보 가져오는 중...</p>
+          </div>
+
+          <div id="empty-state" class="glass-panel empty-state">
+            <i data-lucide="github" style="font-size: 2.5rem; margin-bottom: 0.8rem; color: var(--text-muted);"></i>
+            <h3>조회할 레포지토리가 없습니다</h3>
+            <p>연동에 문제가 있거나, 계정에 레포지토리가 존재하지 않을 수 있습니다.</p>
+            <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
+              <button id="btn-empty-logout" class="btn btn-danger">연동 해제 (로그아웃)</button>
+              <button id="btn-empty-settings" class="btn btn-primary">연동 설정 변경</button>
+            </div>
+          </div>
+
+          <!-- Micro Dashboard Grid (repo cards) -->
+          <div id="repo-card-grid" class="repo-grid" style="display: none;">
+            <!-- Dynamically generated Micro Repository Cards -->
+          </div>
+        </section>
+
+        <!-- Right side: Compact Sidebar for global referrals -->
+        <aside class="sidebar">
+          <!-- Unified Referrers -->
+          <div class="glass-panel sidebar-panel">
+            <h3 class="panel-title"><i data-lucide="link-2" style="color: var(--accent-amber);"></i> 주요 유입 사이트</h3>
+            <div id="referrer-list-container" class="referrer-list">
+              <!-- Dynamic referrers -->
+            </div>
+          </div>
+
+          <!-- Cumulative score rank -->
+          <div class="glass-panel sidebar-panel">
+            <h3 class="panel-title"><i data-lucide="flame" style="color: var(--accent-rose);"></i> 최근 14일 인기 랭킹</h3>
+            <div id="top-repos-list-container" class="top-repos-list">
+              <!-- Dynamic ranks -->
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
   </div>
 
   <!-- Settings Drawer -->

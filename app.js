@@ -1060,6 +1060,8 @@ function showLoading(msg) {
   document.getElementById('loading-text').innerText = msg;
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('dashboard-content').style.display = 'none';
+  const cardGrid = document.getElementById('repo-card-grid');
+  if (cardGrid) cardGrid.style.display = 'none';
 }
 function hideLoading() {
   document.getElementById('loading-state').style.display = 'none';
@@ -1067,6 +1069,8 @@ function hideLoading() {
 function showEmptyState() {
   document.getElementById('empty-state').style.display = 'flex';
   document.getElementById('dashboard-content').style.display = 'none';
+  const cardGrid = document.getElementById('repo-card-grid');
+  if (cardGrid) cardGrid.style.display = 'none';
 }
 
 // -------------------------------------------------------------
@@ -1159,8 +1163,9 @@ function renderDashboard() {
   });
   
   // Render Cards
-  const gridContainer = document.getElementById('repo-grid-container');
+  const gridContainer = document.getElementById('repo-card-grid');
   gridContainer.innerHTML = '';
+  gridContainer.style.display = 'grid';
   
   filtered.forEach(repo => {
     const card = document.createElement('div');
@@ -1809,6 +1814,7 @@ function updateLayoutState() {
   
   const welcomeSection = document.getElementById('welcome-section');
   const summaryGrid = document.querySelector('.summary-grid');
+  const mainContentWrapper = document.querySelector('.main-content-wrapper');
   const mainLayout = document.querySelector('.main-layout');
   const btnSettings = document.getElementById('btn-settings');
   const btnLogout = document.getElementById('btn-logout');
@@ -1818,6 +1824,7 @@ function updateLayoutState() {
   
   if (isConnected) {
     if (welcomeSection) welcomeSection.style.display = 'none';
+    if (mainContentWrapper) mainContentWrapper.style.display = 'block';
     if (mainLayout) mainLayout.style.display = 'grid';
     if (btnSettings) btnSettings.style.display = 'inline-flex';
     if (btnLogout) btnLogout.style.display = 'inline-flex';
@@ -1869,6 +1876,7 @@ function updateLayoutState() {
     if (formView) formView.style.display = 'none';
 
     if (summaryGrid) summaryGrid.style.display = 'none';
+    if (mainContentWrapper) mainContentWrapper.style.display = 'none';
     if (mainLayout) mainLayout.style.display = 'none';
     if (btnSettings) btnSettings.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'none';
